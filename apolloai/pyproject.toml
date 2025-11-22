@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "apolloai"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Kevin Rohan Vaz", email = "excalibur.krv@gmail.com" },
+]
+classifiers = [
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
+]
+dependencies = [
+  "gradio==6.0.0",
+  "diffusers==0.35.2",
+  "sentencepiece==0.2.1",
+  "gguf==0.17.1",
+  "transformers==4.57.1",
+  "accelerate==1.11.0",
+  "ftfy==6.3.1",
+  "pyarrow==22.0.0",
+  "langchain==1.0.7",
+  "langchain-ollama==1.0.0",
+  "ollama==0.6.1"
+]
+
+[project.urls]
+
+[tool.hatch.version]
+path = "src/apolloai/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/apolloai tests}"
+
+[tool.coverage.run]
+source_pkgs = ["apolloai", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/apolloai/__about__.py",
+]
+
+[tool.coverage.paths]
+apolloai = ["src/apolloai", "*/apolloai/src/apolloai"]
+tests = ["tests", "*/apolloai/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
