@@ -1,6 +1,7 @@
 from apolloai.llm import completion, llm_config
 import gradio as gr
 from uuid import uuid4
+import os
 
 chats = [{"session_id": uuid4(), "messages": [], "short_name": "Dummy Session"}]
 main_page = "Agent Mode"
@@ -151,7 +152,10 @@ with gr.Blocks(
                 gr.Markdown("# TODO")
 
     chatbot = gr.Chatbot(
-        avatar_images=("src/apolloai/images/user.png", "src/apolloai/images/owl.png"),
+        avatar_images=(
+            os.path.join("src", "apolloai", "images", "user.png"),
+            os.path.join("src", "apolloai", "images", "owl.png"),
+        ),
         show_label=False,
         elem_id="chatbot-section",
     )
