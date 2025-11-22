@@ -7,7 +7,7 @@ llm_config = {
             "min": 0,
             "max": 1,
             "type": "slider",
-            "default": 0.5,
+            "default": 0.8,
             "order": 1,
             "label": "Temperature",
         },
@@ -26,6 +26,38 @@ llm_config = {
             "order": 2,
             "label": "Context Length",
         },
+        "top_k": {
+            "default": 40,
+            "type": "number",
+            "min": 1,
+            "max": 100,
+            "order": 3,
+            "label": "Top K Sampling"
+        },
+        "top_p": {
+            "default": 0.9,
+            "type": "slider",
+            "min": 0,
+            "max": 1,
+            "order": 4,
+            "label": "Top P Sampling"
+        },
+        "repeat_penalty": {
+            "default": 1.1,
+            "type": "number",
+            "min": 0,
+            "max": 2,
+            "order": 5,
+            "label": "Repeat Penalty"
+        },
+        "num_predict": {
+            "default": 128,
+            "type": "number",
+            "min": -1,
+            "max": 128000,
+            "order": 6,
+            "label": "Max Tokens"
+        }
     }
 }
 
@@ -75,6 +107,7 @@ system_message = [{"role": "system", "content": general_prompt}]
 
 
 def get_agent(model_name, model_parameters):
+    print(model_name, model_parameters)
     llm = ChatOllama(model=model_name, **model_parameters)
     agent = create_agent(llm)
     return agent

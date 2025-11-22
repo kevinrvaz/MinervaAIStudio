@@ -15,6 +15,10 @@ def history_builder(history, message):
     return history, gr.MultimodalTextbox(value=None, interactive=True)
 
 
+def set_parameter_field(parameter, val, config):
+    return {**config, parameter: val}
+
+
 with gr.Blocks(
     fill_height=True,
 ) as demo:
@@ -33,9 +37,6 @@ with gr.Blocks(
             html_string += f"<h3>{message['short_name']}</h3>"
         print(html_string)
         gr.Markdown(f" <hr/>{html_string} <hr/>")
-
-    def set_parameter_field(parameter, val, config):
-        return {**config, parameter: val}
 
     @gr.on(
         triggers=[model_selected.change, demo.load],
@@ -138,7 +139,7 @@ with gr.Blocks(
 
     @gr.render(triggers=[model_selected.change, demo.load], inputs=[model_selected])
     def get_agent_settings_sidebar(model_selected):
-        with gr.Sidebar(position="right", open=False):
+        with gr.Sidebar(position="right", open=False, width=360):
             gr.Markdown("# Agent Settings")
             gr.Markdown("## Model Settings")
             for block in build_dynamic_model_settings(model_selected):
