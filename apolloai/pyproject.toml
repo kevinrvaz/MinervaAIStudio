@@ -28,7 +28,10 @@ dependencies = [
   "pyarrow==22.0.0",
   "langchain==1.0.7",
   "langchain-ollama==1.0.0",
-  "ollama==0.6.1"
+  "ollama==0.6.1",
+  "langchain-community==0.4.1",
+  "ddgs==9.9.1",
+  "protobuf==6.33.1"
 ]
 
 [project.urls]
