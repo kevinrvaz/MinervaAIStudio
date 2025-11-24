@@ -172,12 +172,15 @@ def normalize_history(history):
                 "log": message["content"][0]["file"],
             }
 
-            message["content"] = f"file path - {message["content"][0]["file"]["path"]}"
+            message["content"] = f"file path - {message["content"][0]["file"]}"
 
         if (
             message["role"] == "assistant"
             and "metadata" in message
-            and "image" in message["metadata"]["title"]
+            and (
+                "image" in message["metadata"]["title"]
+                or "3d" in message["metadata"]["title"]
+            )
         ):
             message["content"] = message["metadata"]["log"]
 
@@ -190,13 +193,21 @@ def denormalize_history(history):
         if (
             message["role"] == "assistant"
             and "metadata" in message
-            and "image" in message["metadata"]["title"]
+            and (
+                "image" in message["metadata"]["title"]
+                or "3d" in message["metadata"]["title"]
+            )
         ):
             if os.path.isfile(message["metadata"]["log"]):
-                message["content"] = gr.Image(
-                    message["metadata"]["log"],
-                    buttons=["download", "share", "fullscreen"],
-                )
+                if "3d" in message["metadata"]["title"]:
+                    message["content"] = gr.Model3D(
+                        message["metadata"]["log"],
+                    )
+                elif "image" in message["metadata"]["title"]:
+                    message["content"] = gr.Image(
+                        message["metadata"]["log"],
+                        buttons=["download", "share", "fullscreen"],
+                    )
 
         if (
             message["role"] == "user"
@@ -207,7 +218,7 @@ def denormalize_history(history):
             message["metadata"] = None
 
 
-def completion(history, model_name, model_parameters, tools_selected):
+def chat_completion(history, model_name, model_parameters, tools_selected):
     normalize_history(history)
     bot = get_agent(model_name, model_parameters, tools_selected).invoke(
         {"messages": history}

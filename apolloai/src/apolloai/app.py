@@ -1,9 +1,13 @@
-from apolloai.llm import completion, llm_config, history_builder
+from apolloai.llm import chat_completion, llm_config, history_builder
 from apolloai.tools.general_purpose import search_tool, GENERAL_TOOLS
 from apolloai.tools.images import generate_image, image_resize_to_new_width, IMAGE_TOOLS
 from apolloai.tools.audio import AUDIO_TOOLS
 from apolloai.tools.video import VIDEO_TOOLS
-from apolloai.tools.threed import generate_3d_model_from_image, generate_3d_mesh_from_image, THREED_TOOLS
+from apolloai.tools.threed import (
+    generate_3d_model_from_image,
+    generate_3d_mesh_from_image,
+    THREED_TOOLS,
+)
 import gradio as gr
 from uuid import uuid4
 import os
@@ -311,7 +315,7 @@ with gr.Blocks(
                 [chatbot, text_field],
                 queue=False,
             ).success(
-                completion,
+                chat_completion,
                 inputs=[
                     chatbot,
                     model_selected,
@@ -391,7 +395,7 @@ with demo.route("Builtin Tools"):
             render_button.click(
                 generate_3d_mesh_from_image, inputs=[image_to_3d], outputs=[model_3d]
             )
-        
+
         with gr.Tab("Image to 3D Model"):
             with gr.Column():
                 image_to_3d = gr.Image(
@@ -410,11 +414,17 @@ with demo.route("MCP Servers"):
 with demo.route("Model Manager"):
     navbar = gr.Navbar(visible=True, main_page_name=main_page)
 
-    with gr.Tab("Download Models"):
-        gr.Markdown("Download Models TODO")
+    with gr.Tab("Model Inference Provider"):
+        choices = ["ollama", "system", "modal"]
+        gr.Markdown("# Text Generation & Reasoning Models")
+        with gr.Row():
+            gr.Dropdown(choices=choices, label="gpt-oss:20b", interactive=True)
+            gr.Dropdown(choices=choices, label="gpt-oss:120b", interactive=True)
 
-    with gr.Tab("Quantization"):
-        gr.Markdown("Quantization Models TODO")
+        gr.Markdown("# Image Models")
+        with gr.Row():
+            gr.Dropdown(choices=choices, label="FLUX.1-dev", interactive=True)
+            gr.Dropdown(choices=choices, label="FLUX.1-schnell", interactive=True)
 
     with gr.Tab("Deploy"):
         gr.Markdown("Deploy Models TODO")
