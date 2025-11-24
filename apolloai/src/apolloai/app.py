@@ -1,6 +1,9 @@
-from apolloai.llm import completion, llm_config
+from apolloai.llm import completion, llm_config, history_builder
 from apolloai.tools.general_purpose import search_tool, GENERAL_TOOLS
 from apolloai.tools.images import generate_image, image_resize_to_new_width, IMAGE_TOOLS
+from apolloai.tools.audio import AUDIO_TOOLS
+from apolloai.tools.video import VIDEO_TOOLS
+from apolloai.tools.threed import generate_3d_model_from_image, generate_3d_mesh_from_image, THREED_TOOLS
 import gradio as gr
 from uuid import uuid4
 import os
@@ -9,16 +12,31 @@ chats = [{"session_id": uuid4(), "messages": [], "short_name": "Dummy Session"}]
 main_page = "Agent Mode"
 
 
-def history_builder(history, message):
-    for x in message["files"]:
-        history.append({"role": "user", "content": {"path": x}})
-    if message["text"] is not None:
-        history.append({"role": "user", "content": message["text"]})
-    return history, gr.MultimodalTextbox(value=None, interactive=True)
-
-
 def set_parameter_field(parameter, val, config):
     return {**config, parameter: val}
+
+
+def tool_setter(tool_name, tools, should_keep):
+    if should_keep:
+        tools.add(tool_name)
+    else:
+        tools.discard(tool_name)
+    return set(tools)
+
+
+def default_builtin_tool_setter():
+    tools = set()
+    for modality in (
+        GENERAL_TOOLS,
+        IMAGE_TOOLS,
+        AUDIO_TOOLS,
+        VIDEO_TOOLS,
+        THREED_TOOLS,
+    ):
+        for tool in modality["tools"]:
+            if tool["default"]:
+                tools.add(tool["tool_id"])
+    return tools
 
 
 with gr.Blocks(
@@ -26,6 +44,7 @@ with gr.Blocks(
 ) as demo:
     model_config_state = gr.State({})
     model_selected = gr.State("gpt-oss:20b")
+    builtin_tools_selected = gr.State(default_builtin_tool_setter())
 
     navbar = gr.Navbar(visible=True, main_page_name=main_page)
     with gr.Sidebar():
@@ -190,14 +209,77 @@ with gr.Blocks(
             with gr.Accordion(label="Builtin Tools", open=False):
                 with gr.Accordion(label=GENERAL_TOOLS["label"], open=False):
                     for tool in GENERAL_TOOLS["tools"]:
-                        gr.Checkbox(
+                        box = gr.Checkbox(
                             value=tool["default"], label=tool["label"], interactive=True
+                        )
+                        box.input(
+                            tool_setter,
+                            inputs=[
+                                gr.State(tool["tool_id"]),
+                                builtin_tools_selected,
+                                box,
+                            ],
+                            outputs=[builtin_tools_selected],
                         )
 
                 with gr.Accordion(label=IMAGE_TOOLS["label"], open=False):
                     for tool in IMAGE_TOOLS["tools"]:
-                        gr.Checkbox(
+                        box = gr.Checkbox(
                             value=tool["default"], label=tool["label"], interactive=True
+                        )
+                        box.input(
+                            tool_setter,
+                            inputs=[
+                                gr.State(tool["tool_id"]),
+                                builtin_tools_selected,
+                                box,
+                            ],
+                            outputs=[builtin_tools_selected],
+                        )
+
+                with gr.Accordion(label=VIDEO_TOOLS["label"], open=False):
+                    for tool in VIDEO_TOOLS["tools"]:
+                        box = gr.Checkbox(
+                            value=tool["default"], label=tool["label"], interactive=True
+                        )
+                        box.input(
+                            tool_setter,
+                            inputs=[
+                                gr.State(tool["tool_id"]),
+                                builtin_tools_selected,
+                                box,
+                            ],
+                            outputs=[builtin_tools_selected],
+                        )
+
+                with gr.Accordion(label=AUDIO_TOOLS["label"], open=False):
+                    for tool in AUDIO_TOOLS["tools"]:
+                        box = gr.Checkbox(
+                            value=tool["default"], label=tool["label"], interactive=True
+                        )
+                        box.input(
+                            tool_setter,
+                            inputs=[
+                                gr.State(tool["tool_id"]),
+                                builtin_tools_selected,
+                                box,
+                            ],
+                            outputs=[builtin_tools_selected],
+                        )
+
+                with gr.Accordion(label=THREED_TOOLS["label"], open=False):
+                    for tool in THREED_TOOLS["tools"]:
+                        box = gr.Checkbox(
+                            value=tool["default"], label=tool["label"], interactive=True
+                        )
+                        box.input(
+                            tool_setter,
+                            inputs=[
+                                gr.State(tool["tool_id"]),
+                                builtin_tools_selected,
+                                box,
+                            ],
+                            outputs=[builtin_tools_selected],
                         )
 
             with gr.Accordion(label="MCP Servers", open=False):
@@ -230,7 +312,12 @@ with gr.Blocks(
                 queue=False,
             ).success(
                 completion,
-                inputs=[chatbot, model_selected, model_config_state],
+                inputs=[
+                    chatbot,
+                    model_selected,
+                    model_config_state,
+                    builtin_tools_selected,
+                ],
                 outputs=chatbot,
             )
 
@@ -293,7 +380,29 @@ with demo.route("Builtin Tools"):
         pass
 
     with gr.Tab("3D"):
-        pass
+        with gr.Tab("Image to 3D Mesh"):
+            with gr.Column():
+                image_to_3d = gr.Image(
+                    label="Image to create 3d mesh from", type="filepath"
+                )
+                render_button = gr.Button("Generate 3D Mesh")
+            with gr.Column():
+                model_3d = gr.Model3D(interactive=False, label="Generated 3D Mesh")
+            render_button.click(
+                generate_3d_mesh_from_image, inputs=[image_to_3d], outputs=[model_3d]
+            )
+        
+        with gr.Tab("Image to 3D Model"):
+            with gr.Column():
+                image_to_3d = gr.Image(
+                    label="Image to create 3d model from", type="filepath"
+                )
+                render_button = gr.Button("Generate 3D Model")
+            with gr.Column():
+                model_3d = gr.Model3D(interactive=False, label="Generated 3D Model")
+            render_button.click(
+                generate_3d_model_from_image, inputs=[image_to_3d], outputs=[model_3d]
+            )
 
 with demo.route("MCP Servers"):
     navbar = gr.Navbar(visible=True, main_page_name=main_page)

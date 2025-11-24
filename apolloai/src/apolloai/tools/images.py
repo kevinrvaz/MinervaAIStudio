@@ -71,7 +71,17 @@ def generate_image_tool(prompt: str) -> str:
 IMAGE_TOOLS = {
     "label": "Image Tools",
     "tools": [
-        {"tool": generate_image_tool, "label": "Generate Image Tool", "default": True},
-        {"tool": image_resizer_tool, "label": "Image Resizer", "default": True},
+        {
+            "tool": generate_image_tool,
+            "label": "Generate Image Tool",
+            "default": True,
+            "tool_id": "generate_image_tool",
+        },
+        {
+            "tool": image_resizer_tool,
+            "label": "Image Resizer",
+            "default": True,
+            "tool_id": "image_resizer",
+        },
     ],
 }

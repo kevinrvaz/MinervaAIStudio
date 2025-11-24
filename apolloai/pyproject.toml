@@ -19,19 +19,21 @@ classifiers = [
 ]
 dependencies = [
   "gradio==6.0.0",
+  "transformers==4.57.1",
   "diffusers==0.35.2",
+  "accelerate==1.11.0",
   "sentencepiece==0.2.1",
   "gguf==0.17.1",
-  "transformers==4.57.1",
-  "accelerate==1.11.0",
   "ftfy==6.3.1",
+  "protobuf==6.33.1",
   "pyarrow==22.0.0",
+  "ddgs==9.9.1",
+  "ollama==0.6.1",
   "langchain==1.0.7",
   "langchain-ollama==1.0.0",
-  "ollama==0.6.1",
   "langchain-community==0.4.1",
-  "ddgs==9.9.1",
-  "protobuf==6.33.1"
+  "hy3dgen==2.0.2",
+  "torchvision==0.24.1"
 ]
 
 [project.urls]

@@ -2,11 +2,17 @@ from langchain.agents import create_agent
 from langchain.messages import ToolMessage
 from langchain_ollama import ChatOllama
 from apolloai.tools.general_purpose import search_tool
-from apolloai.tools.images import generate_image_tool, image_resizer_tool
+from apolloai.tools.images import IMAGE_TOOLS
+from apolloai.tools.audio import AUDIO_TOOLS
+from apolloai.tools.general_purpose import GENERAL_TOOLS
+from apolloai.tools.threed import THREED_TOOLS
+from apolloai.tools.video import VIDEO_TOOLS
 import gradio as gr
+import os
 
 llm_config = {
     "gpt-oss:20b": {
+        "tags": ["text-generation", "tool-calling", "thinking"],
         "inference_parameters": {
             "temperature": {
                 "min": 0,
@@ -117,12 +123,35 @@ Developer Instructions (meta‑settings)
 """
 
 
-def get_agent(model_name, model_parameters):
+def history_builder(history, message):
+    for x in message["files"]:
+        history.append({"role": "user", "content": {"path": x}})
+    if message["text"] is not None:
+        history.append({"role": "user", "content": message["text"]})
+    return history, gr.MultimodalTextbox(value=None, interactive=True)
+
+
+def filter_tools(tools_selected):
+    tools = []
+    for modality in (
+        GENERAL_TOOLS,
+        IMAGE_TOOLS,
+        AUDIO_TOOLS,
+        VIDEO_TOOLS,
+        THREED_TOOLS,
+    ):
+        for tool in modality["tools"]:
+            if tool["tool_id"] in tools_selected:
+                tools.append(tool["tool"])
+    return tools
+
+
+def get_agent(model_name, model_parameters, tools_selected):
     print(model_name, model_parameters)
     llm = ChatOllama(model=model_name, **model_parameters)
     agent = create_agent(
         llm,
-        tools=[search_tool, generate_image_tool, image_resizer_tool],
+        tools=filter_tools(tools_selected),
         system_prompt=general_prompt,
     )
     return agent
@@ -163,9 +192,11 @@ def denormalize_history(history):
             and "metadata" in message
             and "image" in message["metadata"]["title"]
         ):
-            message["content"] = gr.Image(
-                message["metadata"]["log"], buttons=["download", "share", "fullscreen"]
-            )
+            if os.path.isfile(message["metadata"]["log"]):
+                message["content"] = gr.Image(
+                    message["metadata"]["log"],
+                    buttons=["download", "share", "fullscreen"],
+                )
 
         if (
             message["role"] == "user"
@@ -176,9 +207,11 @@ def denormalize_history(history):
             message["metadata"] = None
 
 
-def completion(history, model_name, model_parameters):
+def completion(history, model_name, model_parameters, tools_selected):
     normalize_history(history)
-    bot = get_agent(model_name, model_parameters).invoke({"messages": history})
+    bot = get_agent(model_name, model_parameters, tools_selected).invoke(
+        {"messages": history}
+    )
     user_message = history[-1]["content"][0]["text"]
     user_index = -1
     for index, message in reversed(list(enumerate(bot["messages"]))):
