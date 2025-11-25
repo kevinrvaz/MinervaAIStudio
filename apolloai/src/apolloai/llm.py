@@ -3,7 +3,6 @@ from datetime import datetime
 
 import gradio as gr
 from langchain.agents import create_agent
-from langchain.messages import ToolMessage
 from langchain_ollama import ChatOllama
 
 from apolloai.tools import *
@@ -130,21 +129,6 @@ def history_builder(history, message):
     return history, gr.MultimodalTextbox(value=None, interactive=True)
 
 
-def filter_tools(tools_selected):
-    tools = []
-    for modality in (
-        GENERAL_TOOLS,
-        IMAGE_TOOLS,
-        AUDIO_TOOLS,
-        VIDEO_TOOLS,
-        THREED_TOOLS,
-    ):
-        for tool in modality["tools"]:
-            if tool["tool_id"] in tools_selected:
-                tools.append(tool["tool"])
-    return tools
-
-
 def get_agent(model_name, model_parameters, tools_selected):
     print(model_name, model_parameters)
     llm = ChatOllama(model=model_name, **model_parameters)
@@ -219,46 +203,50 @@ def denormalize_history(history):
 
 def chat_completion(history, model_name, model_parameters, tools_selected):
     normalize_history(history)
-    bot = get_agent(model_name, model_parameters, tools_selected).invoke(
-        {"messages": history}
-    )
-    user_message = history[-1]["content"][0]["text"]
-    user_index = -1
-    for index, message in reversed(list(enumerate(bot["messages"]))):
-        try:
-            if message.content[0]["text"] == user_message:
-                user_index = index
-                break
-        except Exception as e:
-            pass
+    for chunk in get_agent(model_name, model_parameters, tools_selected).stream(
+        {"messages": history}, stream_mode="updates"
+    ):
+        for step, data in chunk.items():
+            if step == "model":
+                for message in data["messages"][-1].content_blocks:
+                    if message["type"] == "reasoning":
+                        history.append(
+                            {
+                                "role": "assistant",
+                                "content": message["reasoning"],
+                                "metadata": {"title": "💭 Thought", "staus": "done"},
+                            }
+                        )
+                    elif message["type"] == "text":
+                        history.append(
+                            {"role": "assistant", "content": message["text"]}
+                        )
+                    elif message["type"] == "tool_call":
+                        history.append(
+                            {
+                                "role": "assistant",
+                                "content": "",
+                                "metadata": {
+                                    "title": f"🛠️ Used {message["name"]} tool",
+                                    "staus": "pending",
+                                    "log": "In Progress",
+                                },
+                            }
+                        )
+                    else:
+                        print("Unknown message", message)
+            elif step == "tools":
+                for message in data["messages"][-1].content_blocks:
+                    if message["type"] == "text":
+                        history[-1]["content"] = message["text"]
+                        history[-1]["metadata"]["status"] = "done"
+                        history[-1]["metadata"]["log"] = (
+                            message["text"] if os.path.isfile(message["text"]) else ""
+                        )
+                    else:
+                        print("Unknown message", message)
+            else:
+                print("Unknown step", step, data)
 
-    for message in bot["messages"][user_index + 1 :]:
-        if (
-            message.additional_kwargs
-            and "reasoning_content" in message.additional_kwargs
-        ):
-            history.append(
-                {
-                    "role": "assistant",
-                    "content": message.additional_kwargs["reasoning_content"],
-                    "metadata": {"title": "💭 Thought", "staus": "done"},
-                }
-            )
-
-        if isinstance(message, ToolMessage):
-            history.append(
-                {
-                    "role": "assistant",
-                    "content": message.content,
-                    "metadata": {
-                        "title": f"🛠️ Used {message.name} tool",
-                        "staus": "done",
-                        "log": message.content,
-                    },
-                }
-            )
-        else:
-            history.append({"role": "assistant", "content": message.content})
-
-    denormalize_history(history)
-    return history
+            denormalize_history(history)
+            yield history
