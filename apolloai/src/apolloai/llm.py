@@ -1,14 +1,12 @@
+import os
+from datetime import datetime
+
+import gradio as gr
 from langchain.agents import create_agent
 from langchain.messages import ToolMessage
 from langchain_ollama import ChatOllama
-from apolloai.tools.images import IMAGE_TOOLS
-from apolloai.tools.audio import AUDIO_TOOLS
-from apolloai.tools.general_purpose import GENERAL_TOOLS
-from apolloai.tools.threed import THREED_TOOLS
-from apolloai.tools.video import VIDEO_TOOLS
-from datetime import datetime
-import gradio as gr
-import os
+
+from apolloai.tools import *
 
 gpt_oss_system_prompt = f"""
 You are Apollo named after the greek god, an AI assistant.

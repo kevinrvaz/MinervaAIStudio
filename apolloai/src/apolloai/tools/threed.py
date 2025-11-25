@@ -1,10 +1,11 @@
-from hy3dgen.texgen import Hunyuan3DPaintPipeline
-from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
-from langchain.tools import tool
-from PIL import Image
-from hy3dgen.rembg import BackgroundRemover
 import random
 import string
+
+from hy3dgen.rembg import BackgroundRemover
+from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
+from hy3dgen.texgen import Hunyuan3DPaintPipeline
+from langchain.tools import tool
+from PIL import Image
 
 
 def generate_3d_mesh_from_image(file_path: str) -> str:

@@ -1,16 +1,14 @@
-from apolloai.llm import chat_completion, llm_config, history_builder
-from apolloai.tools.general_purpose import search_tool, GENERAL_TOOLS
-from apolloai.tools.images import generate_image, image_resize_to_new_width, IMAGE_TOOLS
-from apolloai.tools.audio import AUDIO_TOOLS
-from apolloai.tools.video import VIDEO_TOOLS
-from apolloai.tools.threed import (
-    generate_3d_model_from_image,
-    generate_3d_mesh_from_image,
-    THREED_TOOLS,
-)
-import gradio as gr
-from uuid import uuid4
 import os
+from uuid import uuid4
+
+import gradio as gr
+
+from apolloai.llm import chat_completion, history_builder, llm_config
+from apolloai.tools import *
+from apolloai.tools.general_purpose import search_tool
+from apolloai.tools.images import generate_image, image_resize_to_new_width
+from apolloai.tools.threed import (generate_3d_mesh_from_image,
+                                   generate_3d_model_from_image)
 
 chats = [{"session_id": uuid4(), "messages": [], "short_name": "Dummy Session"}]
 main_page = "Agent Mode"
