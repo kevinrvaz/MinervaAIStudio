@@ -4,6 +4,7 @@ from apolloai.tools.images import IMAGE_TOOLS
 from apolloai.tools.threed import THREED_TOOLS
 from apolloai.tools.video import VIDEO_TOOLS
 
+
 def filter_tools(tools_selected):
     tools = []
     for modality in (
@@ -18,11 +19,37 @@ def filter_tools(tools_selected):
                 tools.append(tool["tool"])
     return tools
 
+
+def tool_setter(tool_name, tools, should_keep):
+    if should_keep:
+        tools.add(tool_name)
+    else:
+        tools.discard(tool_name)
+    return set(tools)
+
+
+def default_builtin_tool_setter():
+    tools = set()
+    for modality in (
+        GENERAL_TOOLS,
+        IMAGE_TOOLS,
+        AUDIO_TOOLS,
+        VIDEO_TOOLS,
+        THREED_TOOLS,
+    ):
+        for tool in modality["tools"]:
+            if tool["default"]:
+                tools.add(tool["tool_id"])
+    return tools
+
+
 __all__ = [
     "AUDIO_TOOLS",
     "GENERAL_TOOLS",
     "IMAGE_TOOLS",
     "THREED_TOOLS",
     "VIDEO_TOOLS",
-    "filter_tools"
+    "filter_tools",
+    "tool_setter",
+    "default_builtin_tool_setter",
 ]

@@ -1,6 +1,5 @@
 import torch
-from diffusers import (FluxPipeline, FluxTransformer2DModel,
-                       GGUFQuantizationConfig)
+from diffusers import FluxPipeline, FluxTransformer2DModel, GGUFQuantizationConfig
 from langchain.tools import tool
 from PIL import Image
 

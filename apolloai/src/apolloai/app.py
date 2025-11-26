@@ -3,7 +3,12 @@ from uuid import uuid4
 
 import gradio as gr
 
-from apolloai.llm import chat_completion, history_builder, llm_config
+from apolloai.llm import (
+    chat_completion,
+    history_builder,
+    llm_config,
+    set_parameter_field,
+)
 from apolloai.tools import *
 from apolloai.tools.general_purpose import search_tool
 from apolloai.tools.images import generate_image, image_resize_to_new_width
@@ -16,48 +21,20 @@ chats = [{"session_id": uuid4(), "messages": [], "short_name": "Dummy Session"}]
 main_page = "Agent Mode"
 
 
-def set_parameter_field(parameter, val, config):
-    return {**config, parameter: val}
-
-
-def tool_setter(tool_name, tools, should_keep):
-    if should_keep:
-        tools.add(tool_name)
-    else:
-        tools.discard(tool_name)
-    return set(tools)
-
-
-def default_builtin_tool_setter():
-    tools = set()
-    for modality in (
-        GENERAL_TOOLS,
-        IMAGE_TOOLS,
-        AUDIO_TOOLS,
-        VIDEO_TOOLS,
-        THREED_TOOLS,
-    ):
-        for tool in modality["tools"]:
-            if tool["default"]:
-                tools.add(tool["tool_id"])
-    return tools
-
-
-with gr.Blocks(
-    fill_height=True,
-    title="Apollo AI Studio"
-) as demo:
+with gr.Blocks(fill_height=True, title="Apollo AI Studio") as demo:
     model_config_state = gr.State({})
     model_selected = gr.State("gpt-oss:20b")
     builtin_tools_selected = gr.State(default_builtin_tool_setter())
 
     navbar = gr.Navbar(visible=True, main_page_name=main_page)
     with gr.Sidebar():
-        gr.Markdown("""
+        gr.Markdown(
+            """
         # Apollo AI Studio
         Apollo AI is an AI assistant that can help in creative tasks like creating and editing images, video, audio and 3d structures using open weight models.
         ## Chat Sessions
-        """)
+        """
+        )
         html_string = ""
         for message in chats:
             html_string += f"<h3>{message['short_name']}</h3>"
@@ -205,10 +182,12 @@ with gr.Blocks(
     @gr.render(triggers=[model_selected.change, demo.load], inputs=[model_selected])
     def get_agent_settings_sidebar(model_selected):
         with gr.Sidebar(position="right", open=False, width=360):
-            gr.Markdown("""
+            gr.Markdown(
+                """
             # Agent Settings
             ## Model Settings
-            """)
+            """
+            )
             for block in build_dynamic_model_settings(model_selected):
                 block["field"].render()
 
@@ -459,5 +438,5 @@ demo.launch(
         margin-top: 5%
     }
     """,
-    favicon_path=os.path.join("src", "apolloai", "images", "owl.png")
+    favicon_path=os.path.join("src", "apolloai", "images", "owl.png"),
 )

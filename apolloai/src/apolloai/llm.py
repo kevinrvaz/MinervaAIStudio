@@ -121,6 +121,10 @@ llm_config = {
 }
 
 
+def set_parameter_field(parameter, val, config):
+    return {**config, parameter: val}
+
+
 def history_builder(history, message):
     for x in message["files"]:
         history.append({"role": "user", "content": {"path": x}})
