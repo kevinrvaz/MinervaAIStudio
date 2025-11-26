@@ -1,11 +1,10 @@
-import random
-import string
-
 from hy3dgen.rembg import BackgroundRemover
 from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
 from hy3dgen.texgen import Hunyuan3DPaintPipeline
 from langchain.tools import tool
 from PIL import Image
+
+from apolloai.utils import create_random_file_name
 
 
 def generate_3d_mesh_from_image(file_path: str) -> str:
@@ -17,8 +16,7 @@ def generate_3d_mesh_from_image(file_path: str) -> str:
         "tencent/Hunyuan3D-2", device="mps"
     )
     mesh = pipeline(image=image)[0]
-    file = "".join(random.choices(string.ascii_letters, k=10))
-    file_name = f"{file}.glb"
+    file_name = create_random_file_name("glb")
     mesh.export(file_name)
     return file_name
 
@@ -50,8 +48,7 @@ def generate_3d_model_from_image(file_path: str) -> str:
     pipeline = Hunyuan3DPaintPipeline.from_pretrained("tencent/Hunyuan3D-2")
     pipeline.enable_model_cpu_offload()
     mesh = pipeline(mesh, image=image)
-    file = "".join(random.choices(string.ascii_letters, k=10))
-    file_name = f"{file}.glb"
+    file_name = create_random_file_name("glb")
     mesh.export(file_name)
     return file_name
 

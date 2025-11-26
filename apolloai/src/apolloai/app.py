@@ -45,6 +45,7 @@ def default_builtin_tool_setter():
 
 with gr.Blocks(
     fill_height=True,
+    title="Apollo AI Studio"
 ) as demo:
     model_config_state = gr.State({})
     model_selected = gr.State("gpt-oss:20b")
@@ -52,11 +53,11 @@ with gr.Blocks(
 
     navbar = gr.Navbar(visible=True, main_page_name=main_page)
     with gr.Sidebar():
-        gr.Markdown("# Apollo AI")
-        gr.Markdown(
-            "Apollo AI is an AI assistant that can help in creative tasks like creating and editing images, video, audio and 3d structures using open weight models."
-        )
-        gr.Markdown("## Chat Sessions")
+        gr.Markdown("""
+        # Apollo AI Studio
+        Apollo AI is an AI assistant that can help in creative tasks like creating and editing images, video, audio and 3d structures using open weight models.
+        ## Chat Sessions
+        """)
         html_string = ""
         for message in chats:
             html_string += f"<h3>{message['short_name']}</h3>"
@@ -204,8 +205,10 @@ with gr.Blocks(
     @gr.render(triggers=[model_selected.change, demo.load], inputs=[model_selected])
     def get_agent_settings_sidebar(model_selected):
         with gr.Sidebar(position="right", open=False, width=360):
-            gr.Markdown("# Agent Settings")
-            gr.Markdown("## Model Settings")
+            gr.Markdown("""
+            # Agent Settings
+            ## Model Settings
+            """)
             for block in build_dynamic_model_settings(model_selected):
                 block["field"].render()
 
@@ -289,6 +292,10 @@ with gr.Blocks(
             with gr.Accordion(label="MCP Servers", open=False):
                 gr.Markdown("# TODO")
 
+            gr.Markdown("## Agents")
+            with gr.Accordion(label="Agents", open=False):
+                pass
+
     chatbot = gr.Chatbot(
         avatar_images=(
             os.path.join("src", "apolloai", "images", "user.png"),
@@ -334,6 +341,9 @@ with gr.Blocks(
             model_selector.change(
                 lambda val: val, inputs=[model_selector], outputs=[model_selected]
             )
+
+with demo.route("Agent Creator"):
+    pass
 
 with demo.route("Builtin Tools"):
     navbar = gr.Navbar(visible=True, main_page_name=main_page)
@@ -449,4 +459,5 @@ demo.launch(
         margin-top: 5%
     }
     """,
+    favicon_path=os.path.join("src", "apolloai", "images", "owl.png")
 )

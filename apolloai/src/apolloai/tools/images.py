@@ -1,11 +1,10 @@
-import random
-import string
-
 import torch
 from diffusers import (FluxPipeline, FluxTransformer2DModel,
                        GGUFQuantizationConfig)
 from langchain.tools import tool
 from PIL import Image
+
+from apolloai.utils import create_random_file_name
 
 
 def generate_image(prompt: str) -> str:
@@ -24,8 +23,7 @@ def generate_image(prompt: str) -> str:
     )
     pipe.enable_model_cpu_offload()
     image = pipe(prompt, generator=torch.manual_seed(0)).images[0]
-    file = "".join(random.choices(string.ascii_letters, k=10))
-    file_name = f"{file}.png"
+    file_name = create_random_file_name("png")
     image.save(file_name)
     return file_name
 
@@ -34,8 +32,7 @@ def image_resize_to_new_width(file_path: str, new_width: int) -> str:
     image = Image.open(file_path)
     w_percent = new_width / float(image.size[0])
     h_size = int((float(image.size[1]) * float(w_percent)))
-    file = "".join(random.choices(string.ascii_letters, k=10))
-    file_name = f"{file}.png"
+    file_name = create_random_file_name("png")
     img = image.resize((new_width, h_size), Image.Resampling.LANCZOS)
     img.save(file_name)
     return file_name
