@@ -1,3 +1,5 @@
+import gc
+
 from hy3dgen.rembg import BackgroundRemover
 from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
 from hy3dgen.texgen import Hunyuan3DPaintPipeline
@@ -16,6 +18,8 @@ def generate_3d_mesh_from_image(file_path: str) -> str:
         "tencent/Hunyuan3D-2", device="mps"
     )
     mesh = pipeline(image=image)[0]
+    del pipeline
+    gc.collect()
     file_name = create_random_file_name("glb")
     mesh.export(file_name)
     return file_name

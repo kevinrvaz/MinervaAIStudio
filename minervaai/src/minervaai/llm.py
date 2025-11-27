@@ -137,7 +137,7 @@ def load_history(file_path):
     # Todo check other fields reload or not
     return (
         history,
-        data["builtin_tools_selected"],
+        set(data["builtin_tools_selected"]),
         data["model_config"],
         data["model_selected"],
         data["session_id"],
@@ -222,6 +222,7 @@ def normalize_history(history):
             and (
                 "image" in message["metadata"]["title"]
                 or "3d" in message["metadata"]["title"]
+                or "speech" in message["metadata"]["title"]
             )
         ):
             message["content"] = message["metadata"]["log"]
@@ -238,6 +239,7 @@ def denormalize_history(history):
             and (
                 "image" in message["metadata"]["title"]
                 or "3d" in message["metadata"]["title"]
+                or "speech" in message["metadata"]["title"]
             )
         ):
             if os.path.isfile(message["metadata"]["log"]):
@@ -249,6 +251,11 @@ def denormalize_history(history):
                     message["content"] = gr.Image(
                         message["metadata"]["log"],
                         buttons=["download", "share", "fullscreen"],
+                    )
+                elif "speech" in message["metadata"]["title"]:
+                    message["content"] = gr.Audio(
+                        message["metadata"]["log"],
+                        buttons=["download", "share"],
                     )
 
         if (

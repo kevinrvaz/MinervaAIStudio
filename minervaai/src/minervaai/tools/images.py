@@ -1,3 +1,5 @@
+import gc
+
 import torch
 from diffusers import FluxPipeline, FluxTransformer2DModel, GGUFQuantizationConfig
 from langchain.tools import tool
@@ -22,6 +24,8 @@ def generate_image(prompt: str) -> str:
     )
     pipe.enable_model_cpu_offload()
     image = pipe(prompt, generator=torch.manual_seed(0)).images[0]
+    del pipe
+    gc.collect()
     file_name = create_random_file_name("png")
     image.save(file_name)
     return file_name

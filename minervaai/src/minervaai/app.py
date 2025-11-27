@@ -21,6 +21,7 @@ from minervaai.tools.threed import (
     generate_3d_mesh_from_image,
     generate_3d_model_from_image,
 )
+from minervaai.tools.audio import text_to_speech
 
 main_page = "Agent Mode"
 
@@ -463,7 +464,16 @@ with demo.route("Builtin Tools"):
         pass
 
     with gr.Tab("Audio"):
-        pass
+        with gr.Tab("Text to Speech"):
+            with gr.Row():
+                with gr.Column():
+                    audio_text = gr.TextArea(label="Audio Text", interactive=True)
+                    audio_button = gr.Button("Generate Speech")
+                with gr.Column():
+                    audio_result = gr.Audio(interactive=False, label="Generated Speech")
+                audio_button.click(
+                    text_to_speech, inputs=[audio_text], outputs=[audio_result]
+                )
 
     with gr.Tab("3D"):
         with gr.Tab("Image to 3D Mesh"):
