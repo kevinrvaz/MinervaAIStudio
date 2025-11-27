@@ -3,8 +3,10 @@ import os
 
 import numpy as np
 import soundfile as sf
+import torch
 from kokoro import KPipeline
 from langchain.tools import tool
+from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
 from minervaai.utils import create_random_file_name
 
@@ -36,6 +38,44 @@ def text_to_speech(text):
     return file_name
 
 
+def speech_to_text(file_path: str) -> str:
+    device = "mps" if torch.mps.is_available() else "cpu"
+    model_id = "openai/whisper-large-v3-turbo"
+    model = AutoModelForSpeechSeq2Seq.from_pretrained(
+        model_id,
+        torch_dtype=torch.float32,
+        use_safetensors=True,
+    )
+    model.to(device)
+    processor = AutoProcessor.from_pretrained(model_id)
+
+    pipe = pipeline(
+        "automatic-speech-recognition",
+        model=model,
+        tokenizer=processor.tokenizer,
+        feature_extractor=processor.feature_extractor,
+        dtype=torch.float32,
+        device=device,
+    )
+
+    res = pipe(file_path)
+    return res["text"]
+
+
+@tool
+def speech_to_text_tool(file_path: str) -> str:
+    """Convert the audio recording file provided into text and return it.
+    you can also use it for understanding audio files.
+
+    Args:
+        file_path (str): The location of the audio file to be converted to text.
+
+    Returns:
+        Text in the audio file provided.
+    """
+    return speech_to_text(file_path)
+
+
 @tool
 def text_to_speech_tool(text: str) -> str:
     """Generate an audio file given an input text and get back a file path, also when using this tool
@@ -58,6 +98,12 @@ AUDIO_TOOLS = {
             "label": "Text to Speech Tool",
             "default": True,
             "tool_id": "text_to_speech_tool",
-        }
+        },
+        {
+            "tool": speech_to_text_tool,
+            "label": "Speech to Text Tool",
+            "default": True,
+            "tool_id": "speech_to_text_tool",
+        },
     ],
 }

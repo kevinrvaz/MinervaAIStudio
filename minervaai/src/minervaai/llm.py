@@ -71,7 +71,7 @@ LLM_CONFIG = {
                 "label": "Reasoning",
             },
             "num_ctx": {
-                "default": 2048,
+                "default": 10000,
                 "type": "number",
                 "min": 1,
                 "max": 128000,
