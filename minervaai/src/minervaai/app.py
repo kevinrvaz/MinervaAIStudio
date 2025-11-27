@@ -22,6 +22,7 @@ from minervaai.tools.threed import (
     generate_3d_model_from_image,
 )
 from minervaai.tools.audio import text_to_speech
+from minervaai.tools.video import text_to_video
 
 main_page = "Agent Mode"
 
@@ -461,7 +462,21 @@ with demo.route("Builtin Tools"):
                 )
 
     with gr.Tab("Video"):
-        pass
+        with gr.Tab("Text to Video"):
+            with gr.Row():
+                with gr.Column():
+                    video_text = gr.TextArea(label="Video Text", interactive=True)
+                    video_negative_prompt = gr.TextArea(
+                        label="Video Negative Prompt", interactive=True
+                    )
+                    video_button = gr.Button("Generate Video")
+                with gr.Column():
+                    video_result = gr.Video(interactive=False, label="Generated Video")
+                video_button.click(
+                    text_to_video,
+                    inputs=[video_text, video_negative_prompt],
+                    outputs=[video_result],
+                )
 
     with gr.Tab("Audio"):
         with gr.Tab("Text to Speech"):
