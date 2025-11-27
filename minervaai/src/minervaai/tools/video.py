@@ -33,7 +33,7 @@ def text_to_video(prompt, negative_prompt):
 @tool
 def text_to_video_tool(prompt: str, negative_prompt: str):
     """Generate a video file given an input prompt and negative prompt and get back a file path, also when using this tool
-    do not try to show the audio, just return the file path. if the user doesn't provide a negative prompt then make one
+    do not try to show the video, just return the file path. if the user doesn't provide a negative prompt then make one
     eg:- worst quality, inconsistent motion, blurry, jittery, distorted
 
     Args:
