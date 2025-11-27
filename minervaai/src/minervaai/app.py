@@ -1,45 +1,119 @@
 import os
+import random
 from uuid import uuid4
 
 import gradio as gr
 
-from apolloai.llm import (
+from minervaai.llm import (
+    LLM_CONFIG,
     chat_completion,
+    failed_chat_completion,
     history_builder,
-    llm_config,
+    load_history,
+    clear_history,
+    record_history,
     set_parameter_field,
 )
-from apolloai.tools import *
-from apolloai.tools.general_purpose import search_tool
-from apolloai.tools.images import generate_image, image_resize_to_new_width
-from apolloai.tools.threed import (
+from minervaai.tools import *
+from minervaai.tools.general_purpose import search_tool
+from minervaai.tools.images import generate_image, image_resize_to_new_width
+from minervaai.tools.threed import (
     generate_3d_mesh_from_image,
     generate_3d_model_from_image,
 )
 
-chats = [{"session_id": uuid4(), "messages": [], "short_name": "Dummy Session"}]
 main_page = "Agent Mode"
 
+if not os.path.exists("message_histories"):
+    os.makedirs("message_histories")
 
-with gr.Blocks(fill_height=True, title="Apollo AI Studio") as demo:
+if not os.path.exists("generated_assets"):
+    os.makedirs("generated_assets")
+
+
+with gr.Blocks(fill_height=True, title="Minerva AI Studio") as demo:
     model_config_state = gr.State({})
     model_selected = gr.State("gpt-oss:20b")
     builtin_tools_selected = gr.State(default_builtin_tool_setter())
+    current_chat_session = gr.State(str(uuid4()))
+    rerender_message_histories = gr.State(False)
+
+    @gr.render(
+        triggers=[current_chat_session.change, demo.load], inputs=[current_chat_session]
+    )
+    def session_markdown(session_id):
+        gr.Markdown(f"Current Chat Session ID: {session_id}")
+
+    chatbot = gr.Chatbot(
+        avatar_images=(
+            os.path.join("src", "minervaai", "images", "user.png"),
+            os.path.join("src", "minervaai", "images", "owl.png"),
+        ),
+        show_label=False,
+        elem_id="chatbot-section",
+    )
 
     navbar = gr.Navbar(visible=True, main_page_name=main_page)
-    with gr.Sidebar():
+
+    with gr.Sidebar(open=True):
         gr.Markdown(
             """
-        # Apollo AI Studio
-        Apollo AI is an AI assistant that can help in creative tasks like creating and editing images, video, audio and 3d structures using open weight models.
-        ## Chat Sessions
-        """
+            # Minerva AI Studio
+            Minerva AI is an AI assistant that can help in creative tasks like creating and editing Images, Video, Audio and 3D structures using open weight models.
+            ## Chat Sessions
+            """
         )
-        html_string = ""
-        for message in chats:
-            html_string += f"<h3>{message['short_name']}</h3>"
-        print(html_string)
-        gr.Markdown(f" <hr/>{html_string} <hr/>")
+        with gr.Row():
+            new_chat = gr.Button("New Chat")
+            new_chat.click(
+                lambda: (str(uuid4()), []), outputs=[current_chat_session, chatbot]
+            )
+
+            def get_file_explorer(root_dir, glob_pattern):
+                return gr.FileExplorer(
+                    label="Session Histories",
+                    glob=glob_pattern,
+                    root_dir=root_dir,
+                    file_count="single",
+                    inputs=[rerender_message_histories],
+                    render=False,
+                )
+
+            # dummy input is needed to prevent gradio from caching
+            @gr.render(
+                triggers=[demo.load, chatbot.change, rerender_message_histories.change],
+                inputs=[rerender_message_histories],
+            )
+            def message_histories_sidebar(m):
+                # Random choice hack to get gradio to reload file explorer
+                message_history_file = get_file_explorer(
+                    "message_histories", random.choice(["*", "*.json"])
+                ).render()
+                load_chat = gr.Button("Load Chat")
+                load_chat.click(
+                    load_history,
+                    inputs=[message_history_file],
+                    outputs=[
+                        chatbot,
+                        builtin_tools_selected,
+                        model_config_state,
+                        model_selected,
+                        current_chat_session,
+                    ],
+                )
+                delete_chat = gr.Button(
+                    icon=os.path.join("src", "minervaai", "images", "dustbin.png"),
+                    value="",
+                )
+                delete_chat.click(
+                    clear_history,
+                    inputs=[
+                        message_history_file,
+                        rerender_message_histories,
+                        current_chat_session,
+                    ],
+                    outputs=[rerender_message_histories],
+                )
 
     @gr.on(
         triggers=[model_selected.change, demo.load],
@@ -48,132 +122,124 @@ with gr.Blocks(fill_height=True, title="Apollo AI Studio") as demo:
     )
     def default_model_config_setter(model_selected):
         default_params = {}
-        if model_selected not in llm_config:
+        if model_selected not in LLM_CONFIG:
             return default_params
         for parameter in sorted(
-            llm_config[model_selected]["inference_parameters"].keys(),
-            key=lambda k: llm_config[model_selected]["inference_parameters"][k][
+            LLM_CONFIG[model_selected]["inference_parameters"].keys(),
+            key=lambda k: LLM_CONFIG[model_selected]["inference_parameters"][k][
                 "order"
             ],
         ):
-            default_params[parameter] = llm_config[model_selected][
+            default_params[parameter] = LLM_CONFIG[model_selected][
                 "inference_parameters"
             ][parameter]["default"]
         return default_params
 
     def build_dynamic_model_settings(model_selected):
-        blocks = [
-            {"field": gr.Markdown(f"## {model_selected} configuration", render=False)}
-        ]
+        blocks = [gr.Markdown(f"## {model_selected} configuration", render=False)]
 
-        if model_selected not in llm_config:
-            return blocks + [{"field": gr.Markdown("# Config not found", render=False)}]
+        if model_selected not in LLM_CONFIG:
+            return blocks + [gr.Markdown("# Config not found", render=False)]
 
         for parameter in sorted(
-            llm_config[model_selected]["inference_parameters"].keys(),
-            key=lambda k: llm_config[model_selected]["inference_parameters"][k][
+            LLM_CONFIG[model_selected]["inference_parameters"].keys(),
+            key=lambda k: LLM_CONFIG[model_selected]["inference_parameters"][k][
                 "order"
             ],
         ):
             if (
-                llm_config[model_selected]["inference_parameters"][parameter]["type"]
+                LLM_CONFIG[model_selected]["inference_parameters"][parameter]["type"]
                 == "slider"
             ):
                 blocks.append(
-                    {
-                        "field": gr.Slider(
-                            maximum=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["max"],
-                            minimum=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["min"],
-                            value=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["default"],
-                            label=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["label"],
-                            interactive=True,
-                            render=False,
-                        ),
-                    }
+                    gr.Slider(
+                        maximum=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["max"],
+                        minimum=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["min"],
+                        value=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["default"],
+                        label=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["label"],
+                        interactive=True,
+                        render=False,
+                    )
                 )
-                blocks[-1]["field"].change(
+                blocks[-1].change(
                     set_parameter_field,
                     inputs=[
                         gr.State(parameter),
-                        blocks[-1]["field"],
+                        blocks[-1],
                         model_config_state,
                     ],
                     outputs=[model_config_state],
                 )
             elif (
-                llm_config[model_selected]["inference_parameters"][parameter]["type"]
+                LLM_CONFIG[model_selected]["inference_parameters"][parameter]["type"]
                 == "dropdown"
             ):
                 blocks.append(
-                    {
-                        "field": gr.Dropdown(
-                            render=False,
-                            interactive=True,
-                            value=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["default"],
-                            choices=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["options"],
-                            label=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["label"],
-                        ),
-                    }
+                    gr.Dropdown(
+                        render=False,
+                        interactive=True,
+                        value=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["default"],
+                        choices=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["options"],
+                        label=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["label"],
+                    )
                 )
-                blocks[-1]["field"].select(
+                blocks[-1].select(
                     set_parameter_field,
                     inputs=[
                         gr.State(parameter),
-                        blocks[-1]["field"],
+                        blocks[-1],
                         model_config_state,
                     ],
                     outputs=[model_config_state],
                 )
             elif (
-                llm_config[model_selected]["inference_parameters"][parameter]["type"]
+                LLM_CONFIG[model_selected]["inference_parameters"][parameter]["type"]
                 == "number"
             ):
                 blocks.append(
-                    {
-                        "field": gr.Number(
-                            maximum=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["max"],
-                            minimum=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["min"],
-                            value=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["default"],
-                            label=llm_config[model_selected]["inference_parameters"][
-                                parameter
-                            ]["label"],
-                            interactive=True,
-                            render=False,
-                        ),
-                    }
+                    gr.Number(
+                        maximum=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["max"],
+                        minimum=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["min"],
+                        value=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["default"],
+                        label=LLM_CONFIG[model_selected]["inference_parameters"][
+                            parameter
+                        ]["label"],
+                        interactive=True,
+                        render=False,
+                    )
                 )
-                blocks[-1]["field"].change(
+                blocks[-1].change(
                     set_parameter_field,
                     inputs=[
                         gr.State(parameter),
-                        blocks[-1]["field"],
+                        blocks[-1],
                         model_config_state,
                     ],
                     outputs=[model_config_state],
                 )
             else:
                 print(
-                    f"Unsupported parameter config {llm_config[model_selected]["inference_parameters"][parameter]}"
+                    f"Unsupported parameter config {LLM_CONFIG[model_selected]["inference_parameters"][parameter]}"
                 )
                 break
 
@@ -186,10 +252,10 @@ with gr.Blocks(fill_height=True, title="Apollo AI Studio") as demo:
                 """
             # Agent Settings
             ## Model Settings
-            """
+                """
             )
             for block in build_dynamic_model_settings(model_selected):
-                block["field"].render()
+                block.render()
 
             gr.Markdown("## Agent Tooling")
             with gr.Accordion(label="Builtin Tools", open=False):
@@ -275,15 +341,6 @@ with gr.Blocks(fill_height=True, title="Apollo AI Studio") as demo:
             with gr.Accordion(label="Agents", open=False):
                 pass
 
-    chatbot = gr.Chatbot(
-        avatar_images=(
-            os.path.join("src", "apolloai", "images", "user.png"),
-            os.path.join("src", "apolloai", "images", "owl.png"),
-        ),
-        show_label=False,
-        elem_id="chatbot-section",
-    )
-
     with gr.Row(equal_height=True):
         with gr.Column(scale=8):
             text_field = gr.MultimodalTextbox(
@@ -291,16 +348,17 @@ with gr.Blocks(fill_height=True, title="Apollo AI Studio") as demo:
                 interactive=True,
                 show_label=False,
                 autofocus=True,
-                placeholder="Enter a message to Apollo.",
+                placeholder="Send a message to Minerva.",
                 stop_btn=True,
                 elem_id="InputField",
             )
-            text_field.submit(
+
+            submit_evt = text_field.submit(
                 history_builder,
                 [chatbot, text_field],
                 [chatbot, text_field],
-                queue=False,
-            ).success(
+            )
+            chat_success = submit_evt.success(
                 chat_completion,
                 inputs=[
                     chatbot,
@@ -310,6 +368,38 @@ with gr.Blocks(fill_height=True, title="Apollo AI Studio") as demo:
                 ],
                 outputs=chatbot,
             )
+            chat_success.failure(
+                failed_chat_completion, inputs=[chatbot], outputs=[chatbot]
+            ).success(
+                record_history,
+                inputs=[
+                    chatbot,
+                    current_chat_session,
+                    model_selected,
+                    model_config_state,
+                    builtin_tools_selected,
+                ],
+            ).success(
+                lambda val: not val,
+                outputs=[rerender_message_histories],
+                inputs=[rerender_message_histories],
+            )
+
+            chat_success.success(
+                record_history,
+                inputs=[
+                    chatbot,
+                    current_chat_session,
+                    model_selected,
+                    model_config_state,
+                    builtin_tools_selected,
+                ],
+            ).success(
+                lambda val: not val,
+                outputs=[rerender_message_histories],
+                inputs=[rerender_message_histories],
+            )
+            text_field.stop(lambda: print("Stopped bot"), cancels=[chat_success])
 
         with gr.Column(scale=4):
             model_selector = gr.Dropdown(
@@ -322,7 +412,10 @@ with gr.Blocks(fill_height=True, title="Apollo AI Studio") as demo:
             )
 
 with demo.route("Agent Creator"):
-    pass
+    navbar = gr.Navbar(visible=True, main_page_name=main_page)
+
+with demo.route("Agent Arena"):
+    navbar = gr.Navbar(visible=True, main_page_name=main_page)
 
 with demo.route("Builtin Tools"):
     navbar = gr.Navbar(visible=True, main_page_name=main_page)
@@ -438,5 +531,5 @@ demo.launch(
         margin-top: 5%
     }
     """,
-    favicon_path=os.path.join("src", "apolloai", "images", "owl.png"),
+    favicon_path=os.path.join("src", "minervaai", "images", "owl.png"),
 )

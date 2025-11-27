@@ -1,4 +1,4 @@
-# ApolloAI
+# Minerva AI Studio
 
 [![PyPI - Version](https://img.shields.io/pypi/v/apolloai.svg)](https://pypi.org/project/apolloai)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/apolloai.svg)](https://pypi.org/project/apolloai)

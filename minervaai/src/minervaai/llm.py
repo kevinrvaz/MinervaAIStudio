@@ -1,14 +1,16 @@
+import json
 import os
+from copy import deepcopy
 from datetime import datetime
 
 import gradio as gr
 from langchain.agents import create_agent
 from langchain_ollama import ChatOllama
 
-from apolloai.tools import *
+from minervaai.tools import *
 
 gpt_oss_system_prompt = f"""
-You are Apollo named after the greek god, an AI assistant.
+You are Minerva named after the roman goddess, an AI assistant.
 Knowledge cutoff: 2024-06
 Current date: {str(datetime.now().date())}
 
@@ -38,7 +40,7 @@ Language Support
 - Primarily English by default; can switch to other languages if the user explicitly asks.
 
 Developer Instructions (meta-settings)
-- Identity: “You are Apollo named after the greek god, an AI assistant”
+- Identity: “You are Minerva named after the roman goddess, an AI assistant.”
 - Knowledge cutoff: 2024-06
 - Current date: {str(datetime.now().date())}
 - Reasoning depth: “medium” by default, updatable via user request.
@@ -48,7 +50,7 @@ Developer Instructions (meta-settings)
 - Output size: keep responses < 800-1,000 words unless specifically requested otherwise.
 """
 
-llm_config = {
+LLM_CONFIG = {
     "gpt-oss:20b": {
         "tags": ["text-generation", "tool-calling", "thinking"],
         "system_prompt": gpt_oss_system_prompt,
@@ -125,6 +127,59 @@ def set_parameter_field(parameter, val, config):
     return {**config, parameter: val}
 
 
+def load_history(file_path):
+    with open(file_path) as file:
+        data = json.load(file)
+
+    history = data["messages"]
+    denormalize_history(history)
+
+    # Todo check other fields reload or not
+    return (
+        history,
+        data["builtin_tools_selected"],
+        data["model_config"],
+        data["model_selected"],
+        data["session_id"],
+    )
+
+
+def clear_history(file_path, render_state, current_session):
+    if os.path.split(file_path)[-1] == f"{current_session}.json":
+        gr.Warning("Cannot delete current session ⛔️!", duration=5)
+        return render_state
+
+    if os.path.exists(file_path):
+        os.unlink(file_path)
+
+    return not render_state
+
+
+def record_history(
+    history,
+    current_chat_session,
+    model_selected,
+    model_config_state,
+    builtin_tools_selected,
+):
+    history_dump = deepcopy(history)
+    normalize_history(history_dump)
+    with open(
+        os.path.join("message_histories", f"{current_chat_session}.json"), "w"
+    ) as history_file:
+        json.dump(
+            {
+                "messages": history_dump,
+                "session_id": current_chat_session,
+                "model_selected": model_selected,
+                "builtin_tools_selected": list(builtin_tools_selected),
+                "model_config": model_config_state,
+                "timestamp": str(datetime.now()),
+            },
+            history_file,
+        )
+
+
 def history_builder(history, message):
     for x in message["files"]:
         history.append({"role": "user", "content": {"path": x}})
@@ -139,7 +194,7 @@ def get_agent(model_name, model_parameters, tools_selected):
     agent = create_agent(
         llm,
         tools=filter_tools(tools_selected),
-        system_prompt=llm_config[model_name]["system_prompt"],
+        system_prompt=LLM_CONFIG[model_name]["system_prompt"],
     )
     return agent
 
@@ -254,3 +309,8 @@ def chat_completion(history, model_name, model_parameters, tools_selected):
 
             denormalize_history(history)
             yield history
+
+
+def failed_chat_completion(history):
+    history.append({"role": "assistant", "content": "User terminated execution"})
+    return history

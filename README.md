@@ -1,1 +1,1 @@
-# ApolloAI
+# Minerva AI Studio

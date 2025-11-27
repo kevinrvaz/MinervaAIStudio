@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "apolloai"
+name = "minervaai"
 dynamic = ["version"]
 description = ''
 readme = "README.md"
@@ -34,32 +34,32 @@ dependencies = [
   "langchain-community==0.4.1",
   "hy3dgen==2.0.2",
   "torchvision==0.24.1",
-  "modal"
+  "modal==1.2.4"
 ]
 
 [project.urls]
 
 [tool.hatch.version]
-path = "src/apolloai/__about__.py"
+path = "src/minervaai/__about__.py"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
   "mypy>=1.0.0",
 ]
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/apolloai tests}"
+check = "mypy --install-types --non-interactive {args:src/minervaai tests}"
 
 [tool.coverage.run]
-source_pkgs = ["apolloai", "tests"]
+source_pkgs = ["minervaai", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/apolloai/__about__.py",
+  "src/minervaai/__about__.py",
 ]
 
 [tool.coverage.paths]
-apolloai = ["src/apolloai", "*/apolloai/src/apolloai"]
-tests = ["tests", "*/apolloai/tests"]
+minervaai = ["src/minervaai", "*/minervaai/src/minervaai"]
+tests = ["tests", "*/minervaai/tests"]
 
 [tool.coverage.report]
 exclude_lines = [

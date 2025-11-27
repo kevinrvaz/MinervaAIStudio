@@ -1,8 +1,8 @@
-from apolloai.tools.audio import AUDIO_TOOLS
-from apolloai.tools.general_purpose import GENERAL_TOOLS
-from apolloai.tools.images import IMAGE_TOOLS
-from apolloai.tools.threed import THREED_TOOLS
-from apolloai.tools.video import VIDEO_TOOLS
+from minervaai.tools.audio import AUDIO_TOOLS
+from minervaai.tools.general_purpose import GENERAL_TOOLS
+from minervaai.tools.images import IMAGE_TOOLS
+from minervaai.tools.threed import THREED_TOOLS
+from minervaai.tools.video import VIDEO_TOOLS
 
 
 def filter_tools(tools_selected):

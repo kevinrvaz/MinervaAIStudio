@@ -3,7 +3,7 @@ from diffusers import FluxPipeline, FluxTransformer2DModel, GGUFQuantizationConf
 from langchain.tools import tool
 from PIL import Image
 
-from apolloai.utils import create_random_file_name
+from minervaai.utils import create_random_file_name
 
 
 def generate_image(prompt: str) -> str:
