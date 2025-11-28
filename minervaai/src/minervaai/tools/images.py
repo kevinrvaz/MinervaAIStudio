@@ -1,15 +1,23 @@
+import base64
 import gc
+from io import BytesIO
 
+import modal
 import torch
 from diffusers import FluxPipeline, FluxTransformer2DModel, GGUFQuantizationConfig
 from langchain.tools import tool
 from PIL import Image
-from transformers import (
-    AutoProcessor,
-    Gemma3ForConditionalGeneration,
-)
+from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
-from minervaai.utils import create_random_file_name
+from minervaai.utils import app, create_random_file_name, image
+
+
+def pil_to_base64(pil_image, format="PNG"):
+    buffered = BytesIO()
+    pil_image.save(buffered, format=format)
+    img_bytes = buffered.getvalue()
+    base64_string = base64.b64encode(img_bytes).decode("utf-8")
+    return base64_string
 
 
 def generate_image(prompt: str) -> str:
@@ -26,10 +34,7 @@ def generate_image(prompt: str) -> str:
         transformer=transformer,
         torch_dtype=torch.bfloat16,
     )
-    pipe.enable_model_cpu_offload()
     image = pipe(prompt, generator=torch.manual_seed(0)).images[0]
-    del pipe
-    gc.collect()
     file_name = create_random_file_name("png")
     image.save(file_name)
     return file_name
@@ -45,25 +50,29 @@ def image_resize_to_new_width(file_path: str, new_width: int) -> str:
     return file_name
 
 
-def image_understanding(file_path: str, prompt: str) -> str:
-    model_id = "google/gemma-3-4b-it"
-    model = Gemma3ForConditionalGeneration.from_pretrained(
-        model_id, device_map="auto"
-    ).eval()
-
-    processor = AutoProcessor.from_pretrained(model_id)
+@app.function(gpu="h100", image=image)
+def image_understanding_internal(image: str, prompt: str) -> str:
+    model = Qwen3VLForConditionalGeneration.from_pretrained(
+        "Qwen/Qwen3-VL-2B-Instruct", dtype="auto", device_map="auto"
+    )
+    processor = AutoProcessor.from_pretrained("Qwen/Qwen3-VL-2B-Instruct")
 
     messages = [
         {
             "role": "system",
-            "content": [{"type": "text", "text": "You are a helpful assistant."}],
+            "content": [
+                {
+                    "type": "text",
+                    "text": "You are a helpful assistant. Keep responses concise unless requested for a detailed response.",
+                }
+            ],
         },
         {
             "role": "user",
             "content": [
                 {
                     "type": "image",
-                    "image": Image.open(file_path),
+                    "image": image,
                 },
                 {"type": "text", "text": prompt},
             ],
@@ -72,20 +81,30 @@ def image_understanding(file_path: str, prompt: str) -> str:
 
     inputs = processor.apply_chat_template(
         messages,
-        add_generation_prompt=True,
         tokenize=True,
+        add_generation_prompt=True,
         return_dict=True,
         return_tensors="pt",
-    ).to(model.device, dtype=torch.bfloat16)
+    )
+    inputs = inputs.to(model.device)
 
-    input_len = inputs["input_ids"].shape[-1]
+    generated_ids = model.generate(**inputs, max_new_tokens=1000)
+    generated_ids_trimmed = [
+        out_ids[len(in_ids) :]
+        for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+    ]
+    output_text = processor.batch_decode(
+        generated_ids_trimmed,
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=False,
+    )
+    return output_text[0]
 
-    with torch.inference_mode():
-        generation = model.generate(**inputs, max_new_tokens=1000, do_sample=False)
-        generation = generation[0][input_len:]
 
-    decoded = processor.decode(generation, skip_special_tokens=True)
-    return decoded
+def image_understanding(file_path: str, prompt: str) -> str:
+    image = Image.open(file_path)
+    b64 = pil_to_base64(image, image.format)
+    return image_understanding_internal.remote(b64, prompt)
 
 
 @tool

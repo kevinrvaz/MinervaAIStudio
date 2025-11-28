@@ -1,7 +1,7 @@
 from minervaai.tools.audio import AUDIO_TOOLS
 from minervaai.tools.general_purpose import GENERAL_TOOLS
 from minervaai.tools.images import IMAGE_TOOLS
-from minervaai.tools.threed import THREED_TOOLS
+# from minervaai.tools.threed import THREED_TOOLS
 from minervaai.tools.video import VIDEO_TOOLS
 
 
@@ -12,7 +12,7 @@ def filter_tools(tools_selected):
         IMAGE_TOOLS,
         AUDIO_TOOLS,
         VIDEO_TOOLS,
-        THREED_TOOLS,
+        # THREED_TOOLS,
     ):
         for tool in modality["tools"]:
             if tool["tool_id"] in tools_selected:
@@ -35,7 +35,7 @@ def default_builtin_tool_setter():
         IMAGE_TOOLS,
         AUDIO_TOOLS,
         VIDEO_TOOLS,
-        THREED_TOOLS,
+        # THREED_TOOLS,
     ):
         for tool in modality["tools"]:
             if tool["default"]:
@@ -47,7 +47,7 @@ __all__ = [
     "AUDIO_TOOLS",
     "GENERAL_TOOLS",
     "IMAGE_TOOLS",
-    "THREED_TOOLS",
+    # "THREED_TOOLS",
     "VIDEO_TOOLS",
     "filter_tools",
     "tool_setter",
