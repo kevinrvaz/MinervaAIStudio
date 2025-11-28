@@ -1,6 +1,7 @@
+import os
 import random
 import string
-import os
+from pathlib import Path
 
 import modal
 
@@ -33,8 +34,12 @@ image = (
     )
     .env({"HF_XET_HIGH_PERFORMANCE": "1"})
 )
+CACHE_DIR = Path("/cache")
+cache_volume = modal.Volume.from_name("hf-hub-cache", create_if_missing=True)
+volumes = {CACHE_DIR: cache_volume}
+secrets = [modal.Secret.from_name("huggingface-secret")]
 
 
 def create_random_file_name(ext):
-    file = "".join(random.choices(string.ascii_letters, k=10))
+    file = "".join(random.choices(string.ascii_letters + string.digits, k=20))
     return os.path.join("generated_assets", f"{file}.{ext}")

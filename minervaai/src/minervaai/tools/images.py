@@ -1,15 +1,17 @@
 import base64
-import gc
 from io import BytesIO
 
-import modal
 import torch
-from diffusers import FluxPipeline, FluxTransformer2DModel, GGUFQuantizationConfig
+from diffusers import (
+    FluxPipeline,
+    FluxTransformer2DModel,
+    GGUFQuantizationConfig,
+    FluxKontextPipeline,
+)
 from langchain.tools import tool
 from PIL import Image
 from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
-
-from minervaai.utils import app, create_random_file_name, image
+from minervaai.utils import app, create_random_file_name, image, volumes, secrets
 
 
 def pil_to_base64(pil_image, format="PNG"):
@@ -20,9 +22,10 @@ def pil_to_base64(pil_image, format="PNG"):
     return base64_string
 
 
-def generate_image(prompt: str) -> str:
+@app.function(gpu="h100", image=image, volumes=volumes, secrets=secrets, timeout=1200)
+def generate_image_internal(prompt: str):
     ckpt_path = (
-        "https://huggingface.co/city96/FLUX.1-dev-gguf/blob/main/flux1-dev-Q2_K.gguf"
+        "https://huggingface.co/city96/FLUX.1-dev-gguf/blob/main/flux1-dev-Q4_1.gguf"
     )
     transformer = FluxTransformer2DModel.from_single_file(
         ckpt_path,
@@ -33,9 +36,42 @@ def generate_image(prompt: str) -> str:
         "black-forest-labs/FLUX.1-dev",
         transformer=transformer,
         torch_dtype=torch.bfloat16,
-    )
+    ).to("cuda")
     image = pipe(prompt, generator=torch.manual_seed(0)).images[0]
+    byte_stream = BytesIO()
+    image.save(byte_stream, format="PNG")
+    return byte_stream.getvalue()
+
+
+@app.function(gpu="h100", image=image, volumes=volumes, secrets=secrets, timeout=1200)
+def image_editing_internal(image: str, prompt: str):
+    pipe = FluxKontextPipeline.from_pretrained(
+        "black-forest-labs/FLUX.1-Kontext-dev", torch_dtype=torch.bfloat16
+    )
+    pipe.to("cuda")
+    decoded_bytes = base64.b64decode(image)
+    image_stream = BytesIO(decoded_bytes)
+    pil_image = Image.open(image_stream)
+    generated_image = pipe(image=pil_image, prompt=prompt, guidance_scale=2.5).images[0]
+    byte_stream = BytesIO()
+    generated_image.save(byte_stream, format="PNG")
+    return byte_stream.getvalue()
+
+
+def image_editing(image, prompt):
     file_name = create_random_file_name("png")
+    pil_image = Image.open(image)
+    b64 = pil_to_base64(pil_image, pil_image.format)
+    generated_image = image_editing_internal.remote(b64, prompt)
+    generated_image = Image.open(BytesIO(generated_image))
+    generated_image.save(file_name)
+    return file_name
+
+
+def generate_image(prompt):
+    file_name = create_random_file_name("png")
+    generated_image = generate_image_internal.remote(prompt)
+    image = Image.open(BytesIO(generated_image))
     image.save(file_name)
     return file_name
 
@@ -50,7 +86,7 @@ def image_resize_to_new_width(file_path: str, new_width: int) -> str:
     return file_name
 
 
-@app.function(gpu="h100", image=image)
+@app.function(gpu="h100", image=image, volumes=volumes, secrets=secrets, timeout=1200)
 def image_understanding_internal(image: str, prompt: str) -> str:
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         "Qwen/Qwen3-VL-2B-Instruct", dtype="auto", device_map="auto"
@@ -150,6 +186,21 @@ def generate_image_tool(prompt: str) -> str:
     return generate_image(prompt)
 
 
+@tool
+def image_editing_tool(file_path: str, prompt: str) -> str:
+    """Use this tool to edit an image given a file path and the a prompt basis guiding the edit,
+    also when using this tool do not try to show the image, just return the file path
+
+    Args:
+        file_path (str): The file path of the image
+        prompt (str): The prompt you want to use to edit the image
+
+    Returns:
+        file path of the edited image
+    """
+    return image_editing(file_path, prompt)
+
+
 IMAGE_TOOLS = {
     "label": "Image Tools",
     "tools": [
@@ -170,6 +221,12 @@ IMAGE_TOOLS = {
             "label": "Image Understanding",
             "default": True,
             "tool_id": "image_understanding_tool",
+        },
+        {
+            "tool": image_editing_tool,
+            "label": "Image Editing",
+            "default": True,
+            "tool_id": "image_editing_tool",
         },
     ],
 }

@@ -20,7 +20,9 @@ from minervaai.tools.images import (
     generate_image,
     image_resize_to_new_width,
     image_understanding,
+    image_editing,
 )
+
 # to be fixed when shifting 3d operations to modal
 # from minervaai.tools.threed import (
 #     generate_3d_mesh_from_image,
@@ -467,7 +469,7 @@ def main():
                     )
 
         with gr.Tab("Image"):
-            with gr.Tab("Text to Image"):
+            with gr.Tab("Image Generation"):
                 with gr.Row():
                     with gr.Column():
                         image_query = gr.TextArea(
@@ -512,6 +514,20 @@ def main():
                         image_understanding,
                         inputs=[image, question],
                         outputs=[answer],
+                    )
+
+            with gr.Tab("Image Editing"):
+                with gr.Row():
+                    with gr.Column():
+                        prompt = gr.TextArea(label="Prompt", interactive=True)
+                        image = gr.Image(label="Image to edit", type="filepath")
+                        edit_button = gr.Button("Edit Image")
+                    with gr.Column():
+                        image_result = gr.Image(interactive=False, label="Edited Image")
+                    edit_button.click(
+                        image_editing,
+                        inputs=[image, prompt],
+                        outputs=[image_result],
                     )
 
         with gr.Tab("Video"):
