@@ -9,7 +9,7 @@ from langchain.tools import tool
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
 from minervaai.utils import create_random_file_name
-
+import scipy
 
 def text_to_speech(text):
     pipeline = KPipeline(lang_code="a", device="mps")
@@ -59,8 +59,32 @@ def speech_to_text(file_path: str) -> str:
     )
 
     res = pipe(file_path)
+    del pipe
+    gc.collect()
     return res["text"]
 
+
+def music_generation(prompt):
+    synthesiser = pipeline("text-to-audio", "facebook/musicgen-large")
+    music = synthesiser(prompt, forward_params={"do_sample": True})
+    file_name = create_random_file_name("wav")
+    scipy.io.wavfile.write(file_name, rate=music["sampling_rate"], data=music["audio"])
+    del synthesiser
+    gc.collect()
+    return file_name
+
+@tool
+def music_generation_tool(prompt: str) -> str:
+    """Generate a music file given an input text prompt and get back a file path, also when using this tool
+    do not try to show the music, just return the file path.
+
+    Args:
+        text (str): text prompt to guide music generation
+
+    Returns:
+        file path to the generated music file.
+    """
+    return music_generation(prompt)
 
 @tool
 def speech_to_text_tool(file_path: str) -> str:
@@ -104,6 +128,12 @@ AUDIO_TOOLS = {
             "label": "Speech to Text Tool",
             "default": True,
             "tool_id": "speech_to_text_tool",
+        },
+        {
+            "tool": music_generation_tool,
+            "label": "Music Generation",
+            "default": True,
+            "tool_id": "music_generation_tool",
         },
     ],
 }

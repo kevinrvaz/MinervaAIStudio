@@ -224,6 +224,7 @@ def normalize_history(history):
                 or "3d" in message["metadata"]["title"]
                 or "speech" in message["metadata"]["title"]
                 or "video" in message["metadata"]["title"]
+                or "music" in message["metadata"]["title"]
             )
         ):
             message["content"] = message["metadata"]["log"]
@@ -242,6 +243,7 @@ def denormalize_history(history):
                 or "3d" in message["metadata"]["title"]
                 or "speech" in message["metadata"]["title"]
                 or "video" in message["metadata"]["title"]
+                or "music" in message["metadata"]["title"]
             )
         ):
             if os.path.isfile(message["metadata"]["log"]):
@@ -254,7 +256,10 @@ def denormalize_history(history):
                         message["metadata"]["log"],
                         buttons=["download", "share", "fullscreen"],
                     )
-                elif "speech" in message["metadata"]["title"]:
+                elif (
+                    "speech" in message["metadata"]["title"]
+                    or "music" in message["metadata"]["title"]
+                ):
                     message["content"] = gr.Audio(
                         message["metadata"]["log"],
                         buttons=["download", "share"],

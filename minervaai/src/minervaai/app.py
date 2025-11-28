@@ -16,12 +16,16 @@ from minervaai.llm import (
 )
 from minervaai.tools import *
 from minervaai.tools.general_purpose import search_tool
-from minervaai.tools.images import generate_image, image_resize_to_new_width
+from minervaai.tools.images import (
+    generate_image,
+    image_resize_to_new_width,
+    image_understanding,
+)
 from minervaai.tools.threed import (
     generate_3d_mesh_from_image,
     generate_3d_model_from_image,
 )
-from minervaai.tools.audio import text_to_speech, speech_to_text
+from minervaai.tools.audio import text_to_speech, speech_to_text, music_generation
 from minervaai.tools.video import text_to_video
 
 main_page = "Agent Mode"
@@ -461,6 +465,22 @@ with demo.route("Builtin Tools"):
                     outputs=[image_result],
                 )
 
+        with gr.Tab("Image Understanding"):
+            with gr.Row():
+                with gr.Column():
+                    question = gr.TextArea(label="Question", interactive=True)
+                    image = gr.Image(
+                        label="Image to understand", type="filepath"
+                    )
+                    ask_button = gr.Button("Ask")
+                with gr.Column():
+                    answer = gr.TextArea(interactive=False, label="Answer")
+                ask_button.click(
+                    image_understanding,
+                    inputs=[image, question],
+                    outputs=[answer],
+                )
+
     with gr.Tab("Video"):
         with gr.Tab("Text to Video"):
             with gr.Row():
@@ -498,13 +518,28 @@ with demo.route("Builtin Tools"):
                         interactive=True,
                         sources=["microphone"],
                         recording=False,
-                        type="filepath"
+                        type="filepath",
                     )
                     audio_button = gr.Button("Generate Text")
                 with gr.Column():
-                    transcribed_audio = gr.TextArea(interactive=False, label="Generated Text")
+                    transcribed_audio = gr.TextArea(
+                        interactive=False, label="Generated Text"
+                    )
                 audio_button.click(
-                    speech_to_text, inputs=[audio_recording], outputs=[transcribed_audio]
+                    speech_to_text,
+                    inputs=[audio_recording],
+                    outputs=[transcribed_audio],
+                )
+
+        with gr.Tab("Music Generation"):
+            with gr.Row():
+                with gr.Column():
+                    audio_text = gr.TextArea(label="Text Prompt", interactive=True)
+                    audio_button = gr.Button("Generate Music")
+                with gr.Column():
+                    audio_result = gr.Audio(interactive=False, label="Generated Music")
+                audio_button.click(
+                    music_generation, inputs=[audio_text], outputs=[audio_result]
                 )
 
     with gr.Tab("3D"):
