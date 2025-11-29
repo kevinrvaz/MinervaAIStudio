@@ -67,7 +67,7 @@ def main():
             elem_id="chatbot-section",
         )
 
-        navbar = gr.Navbar(visible=True, main_page_name=main_page)
+        gr.Navbar(visible=True, main_page_name=main_page)
 
         with gr.Sidebar(open=True):
             gr.Markdown(
@@ -444,13 +444,13 @@ def main():
                 )
 
     with demo.route("Agent Creator"):
-        navbar = gr.Navbar(visible=True, main_page_name=main_page)
+        gr.Navbar(visible=True, main_page_name=main_page)
 
     with demo.route("Agent Arena"):
-        navbar = gr.Navbar(visible=True, main_page_name=main_page)
+        gr.Navbar(visible=True, main_page_name=main_page)
 
     with demo.route("Builtin Tools"):
-        navbar = gr.Navbar(visible=True, main_page_name=main_page)
+        gr.Navbar(visible=True, main_page_name=main_page)
         with gr.Tab("General Purpose"):
             with gr.Tab("Web Search"):
                 with gr.Row():
@@ -643,28 +643,29 @@ def main():
         #         )
 
     with demo.route("MCP Servers"):
-        navbar = gr.Navbar(visible=True, main_page_name=main_page)
+        gr.Navbar(visible=True, main_page_name=main_page)
 
-    with demo.route("Model Manager"):
-        navbar = gr.Navbar(visible=True, main_page_name=main_page)
+    # TODO
+    # with demo.route("Model Manager"):
+    #     navbar = gr.Navbar(visible=True, main_page_name=main_page)
 
-        with gr.Tab("Model Inference Provider"):
-            choices = ["ollama", "system", "modal"]
-            gr.Markdown("# Text Generation & Reasoning Models")
-            with gr.Row():
-                gr.Dropdown(choices=choices, label="gpt-oss:20b", interactive=True)
-                gr.Dropdown(choices=choices, label="gpt-oss:120b", interactive=True)
+    #     with gr.Tab("Model Inference Provider"):
+    #         choices = ["ollama", "system", "modal"]
+    #         gr.Markdown("# Text Generation & Reasoning Models")
+    #         with gr.Row():
+    #             gr.Dropdown(choices=choices, label="gpt-oss:20b", interactive=True)
+    #             gr.Dropdown(choices=choices, label="gpt-oss:120b", interactive=True)
 
-            gr.Markdown("# Image Models")
-            with gr.Row():
-                gr.Dropdown(choices=choices, label="FLUX.1-dev", interactive=True)
-                gr.Dropdown(choices=choices, label="FLUX.1-schnell", interactive=True)
+    #         gr.Markdown("# Image Models")
+    #         with gr.Row():
+    #             gr.Dropdown(choices=choices, label="FLUX.1-dev", interactive=True)
+    #             gr.Dropdown(choices=choices, label="FLUX.1-schnell", interactive=True)
 
-        with gr.Tab("Deploy"):
-            gr.Markdown("Deploy Models TODO")
-
-    with demo.route("Settings"):
-        navbar = gr.Navbar(visible=True, main_page_name=main_page)
+    #     with gr.Tab("Deploy"):
+    #         gr.Markdown("Deploy Models TODO")
+    # TODO
+    # with demo.route("Settings"):
+    #     navbar = gr.Navbar(visible=True, main_page_name=main_page)
 
     demo.launch(
         theme=gr.themes.Soft(),

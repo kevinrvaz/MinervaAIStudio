@@ -11,6 +11,7 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from minervaai.utils import create_random_file_name
 import scipy
 
+
 def text_to_speech(text):
     pipeline = KPipeline(lang_code="a", device="mps")
     generator = pipeline(text, voice="af_heart")
@@ -73,6 +74,7 @@ def music_generation(prompt):
     gc.collect()
     return file_name
 
+
 @tool
 def music_generation_tool(prompt: str) -> str:
     """Generate a music file given an input text prompt and get back a file path, also when using this tool
@@ -85,6 +87,7 @@ def music_generation_tool(prompt: str) -> str:
         file path to the generated music file.
     """
     return music_generation(prompt)
+
 
 @tool
 def speech_to_text_tool(file_path: str) -> str:
