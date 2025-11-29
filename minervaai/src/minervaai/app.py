@@ -21,6 +21,7 @@ from minervaai.tools.images import (
     image_resize_to_new_width,
     image_understanding,
     image_editing,
+    img_to_video
 )
 
 # to be fixed when shifting 3d operations to modal
@@ -281,7 +282,7 @@ def main():
                     block.render()
 
                 gr.Markdown("## Agent Tooling")
-                with gr.Accordion(label="Builtin Tools", open=False):
+                with gr.Accordion(label="Builtin Tools", open=True):
                     with gr.Accordion(label=GENERAL_TOOLS["label"], open=False):
                         for tool in GENERAL_TOOLS["tools"]:
                             box = gr.Checkbox(
@@ -528,6 +529,25 @@ def main():
                         image_editing,
                         inputs=[image, prompt],
                         outputs=[image_result],
+                    )
+            
+            with gr.Tab("Image to Video"):
+                with gr.Row():
+                    with gr.Column():
+                        image = gr.Image(label="Image to use in video", type="filepath")
+                        video_text = gr.TextArea(label="Video Text", interactive=True)
+                        video_negative_prompt = gr.TextArea(
+                            label="Video Negative Prompt", interactive=True
+                        )
+                        video_button = gr.Button("Generate Video")
+                    with gr.Column():
+                        video_result = gr.Video(
+                            interactive=False, label="Generated Video"
+                        )
+                    video_button.click(
+                        img_to_video,
+                        inputs=[image, video_text, video_negative_prompt],
+                        outputs=[video_result],
                     )
 
         with gr.Tab("Video"):
