@@ -1,15 +1,18 @@
 import gc
 import os
-
-import numpy as np
-import soundfile as sf
+from minervaai.utils import image
 import torch
-from kokoro import KPipeline
+
+with image.imports():
+    import numpy as np
+    import soundfile as sf
+    from kokoro import KPipeline
+    import scipy
+
 from langchain.tools import tool
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
 from minervaai.utils import create_random_file_name
-import scipy
 
 
 def text_to_speech(text):

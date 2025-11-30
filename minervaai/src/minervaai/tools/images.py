@@ -1,22 +1,23 @@
 import base64
 from io import BytesIO
-
-import torch
-from diffusers import (
-    FluxKontextPipeline,
-    FluxPipeline,
-    FluxTransformer2DModel,
-    GGUFQuantizationConfig,
-    LTXConditionPipeline,
-    LTXLatentUpsamplePipeline,
-)
-from diffusers.pipelines.ltx.pipeline_ltx_condition import LTXVideoCondition
-from diffusers.utils import export_to_video, load_video
-from langchain.tools import tool
-from PIL import Image
-from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
-
 from minervaai.utils import app, create_random_file_name, image, secrets, volumes
+from langchain.tools import tool
+
+with image.imports():
+    import torch
+    from diffusers import (
+        FluxKontextPipeline,
+        FluxPipeline,
+        FluxTransformer2DModel,
+        GGUFQuantizationConfig,
+        LTXConditionPipeline,
+        LTXLatentUpsamplePipeline,
+    )
+    from diffusers.pipelines.ltx.pipeline_ltx_condition import LTXVideoCondition
+    from diffusers.utils import export_to_video, load_video
+    from PIL import Image
+    from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
+
 
 
 def pil_to_base64(pil_image, format="PNG"):

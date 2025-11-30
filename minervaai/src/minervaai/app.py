@@ -2,36 +2,41 @@ import os
 import random
 from uuid import uuid4
 
-import gradio as gr
+import modal
 
 from minervaai.llm import (
     LLM_CONFIG,
     chat_completion,
+    clear_history,
     failed_chat_completion,
     history_builder,
     load_history,
-    clear_history,
     record_history,
     set_parameter_field,
 )
 from minervaai.tools import *
-from minervaai.tools.general_purpose import search_tool
-from minervaai.tools.images import (
-    generate_image,
-    image_resize_to_new_width,
-    image_understanding,
-    image_editing,
-    img_to_video
-)
 
 # to be fixed when shifting 3d operations to modal
 # from minervaai.tools.threed import (
 #     generate_3d_mesh_from_image,
 #     generate_3d_model_from_image,
 # )
-from minervaai.tools.audio import text_to_speech, speech_to_text, music_generation
+from minervaai.tools.audio import music_generation, speech_to_text, text_to_speech
+from minervaai.tools.general_purpose import search_tool
+from minervaai.tools.images import (
+    generate_image,
+    image_editing,
+    image_resize_to_new_width,
+    image_understanding,
+    img_to_video,
+)
 from minervaai.tools.video import text_to_video
-from minervaai.utils import app
+from minervaai.utils import app, image
+
+with image.imports():
+    import gradio as gr
+    from fastapi import FastAPI
+    from gradio.routes import mount_gradio_app
 
 main_page = "Agent Mode"
 
@@ -42,7 +47,6 @@ if not os.path.exists("generated_assets"):
     os.makedirs("generated_assets")
 
 
-@app.local_entrypoint()
 def main():
     with gr.Blocks(fill_height=True, title="Minerva AI Studio") as demo:
         model_config_state = gr.State({})
@@ -91,6 +95,7 @@ def main():
                         file_count="single",
                         inputs=[rerender_message_histories],
                         render=False,
+                        max_height=300,
                     )
 
                 # dummy input is needed to prevent gradio from caching
@@ -334,8 +339,25 @@ def main():
                                 outputs=[builtin_tools_selected],
                             )
 
-                    with gr.Accordion(label=AUDIO_TOOLS["label"], open=False):
-                        for tool in AUDIO_TOOLS["tools"]:
+                    # with gr.Accordion(label=AUDIO_TOOLS["label"], open=False):
+                    #     for tool in AUDIO_TOOLS["tools"]:
+                    #         box = gr.Checkbox(
+                    #             value=tool["default"],
+                    #             label=tool["label"],
+                    #             interactive=True,
+                    #         )
+                    #         box.input(
+                    #             tool_setter,
+                    #             inputs=[
+                    #                 gr.State(tool["tool_id"]),
+                    #                 builtin_tools_selected,
+                    #                 box,
+                    #             ],
+                    #             outputs=[builtin_tools_selected],
+                    #         )
+
+                    with gr.Accordion(label=THREED_TOOLS["label"], open=False):
+                        for tool in THREED_TOOLS["tools"]:
                             box = gr.Checkbox(
                                 value=tool["default"],
                                 label=tool["label"],
@@ -350,21 +372,6 @@ def main():
                                 ],
                                 outputs=[builtin_tools_selected],
                             )
-
-                    # with gr.Accordion(label=THREED_TOOLS["label"], open=False):
-                    #     for tool in THREED_TOOLS["tools"]:
-                    #         box = gr.Checkbox(
-                    #             value=tool["default"], label=tool["label"], interactive=True
-                    #         )
-                    #         box.input(
-                    #             tool_setter,
-                    #             inputs=[
-                    #                 gr.State(tool["tool_id"]),
-                    #                 builtin_tools_selected,
-                    #                 box,
-                    #             ],
-                    #             outputs=[builtin_tools_selected],
-                    #         )
 
                 with gr.Accordion(label="MCP Servers", open=False):
                     gr.Markdown("# TODO")
@@ -435,7 +442,7 @@ def main():
 
             with gr.Column(scale=4):
                 model_selector = gr.Dropdown(
-                    ["gpt-oss:20b", "claude-sonnet-4.5", "gpt-5"],
+                    ["gpt-oss:120b", "gpt-oss:20b"],
                     label="Model Selector",
                     interactive=True,
                 )
@@ -446,8 +453,8 @@ def main():
     with demo.route("Agent Creator"):
         gr.Navbar(visible=True, main_page_name=main_page)
 
-    with demo.route("Agent Arena"):
-        gr.Navbar(visible=True, main_page_name=main_page)
+    # with demo.route("Agent Arena"):
+    #     gr.Navbar(visible=True, main_page_name=main_page)
 
     with demo.route("Builtin Tools"):
         gr.Navbar(visible=True, main_page_name=main_page)
@@ -530,7 +537,7 @@ def main():
                         inputs=[image, prompt],
                         outputs=[image_result],
                     )
-            
+
             with gr.Tab("Image to Video"):
                 with gr.Row():
                     with gr.Column():
@@ -667,8 +674,13 @@ def main():
     # with demo.route("Settings"):
     #     navbar = gr.Navbar(visible=True, main_page_name=main_page)
 
+    return demo
+
+
+@app.local_entrypoint()
+def local():
+    demo = main()
     demo.launch(
-        theme=gr.themes.Soft(),
         css="""
         footer {
             visibility: hidden
@@ -683,9 +695,37 @@ def main():
             margin-top: 5%
         }
         """,
+        theme=gr.themes.Soft(),
         favicon_path=os.path.join("src", "minervaai", "images", "owl.png"),
     )
 
 
-if __name__ == "__main__":
-    main()
+@app.function(
+    image=image,
+    max_containers=1,
+)
+@modal.concurrent(max_inputs=100)
+@modal.asgi_app()
+def remote():
+    demo = main()
+    return mount_gradio_app(
+        app=app,
+        blocks=demo,
+        path="/",
+        css="""
+        footer {
+            visibility: hidden
+        } 
+        #chatbot-section {
+            min-height: 65vh
+        } 
+        #InputField .record.record-button {
+            margin-top: 15%
+        } 
+        #InputField .audio-container.compact-audio {
+            margin-top: 5%
+        }
+        """,
+        theme=gr.themes.Soft(),
+        favicon_path=os.path.join("src", "minervaai", "images", "owl.png"),
+    )

@@ -2,10 +2,13 @@ import json
 import os
 from copy import deepcopy
 from datetime import datetime
-
+from minervaai.utils import image
 import gradio as gr
-from langchain.agents import create_agent
-from langchain_ollama import ChatOllama
+
+with image.imports():
+    from langchain.agents import create_agent
+    from langchain_ollama import ChatOllama
+    from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 
 from minervaai.tools import *
 
@@ -21,8 +24,7 @@ General Behavior
 - If a user asks for a change (e.g., a different format or a deeper dive), obey unless it conflicts with policy or safety constraints.
 
 Reasoning Depth
-- Default reasoning level is “medium”: generate a quick chain of thought then produce the final answer.
-- If the user requests a detailed walk-through, raise the reasoning depth (“high”) to produce a step-by-step analysis.
+- Always think in depth then generate a chain of thought to produce the final answer.
 
 Memory & Context
 - Only retain the conversation context within the current session; no persistent memory after the session ends.
@@ -54,6 +56,10 @@ Developer Instructions (meta-settings)
 LLM_CONFIG = {
     "gpt-oss:20b": {
         "tags": ["text-generation", "tool-calling", "thinking"],
+        "inference_provider_name": {
+            "ollama": "gpt-oss:20b",
+            "huggingface": "openai/gpt-oss-20b",
+        },
         "system_prompt": gpt_oss_system_prompt,
         "inference_parameters": {
             "temperature": {
@@ -120,7 +126,80 @@ LLM_CONFIG = {
                 "order": 7,
             },
         },
-    }
+    },
+    "gpt-oss:120b": {
+        "tags": ["text-generation", "tool-calling", "thinking"],
+        "inference_provider_name": {
+            "ollama": "gpt-oss:120b",
+            "huggingface": "openai/gpt-oss-120b",
+        },
+        "system_prompt": gpt_oss_system_prompt,
+        "inference_parameters": {
+            "temperature": {
+                "min": 0,
+                "max": 1,
+                "type": "slider",
+                "default": 0.8,
+                "order": 1,
+                "label": "Temperature",
+            },
+            "reasoning": {
+                "default": "medium",
+                "type": "dropdown",
+                "options": ["low", "medium", "high"],
+                "order": 0,
+                "label": "Reasoning",
+            },
+            "num_ctx": {
+                "default": 10000,
+                "type": "number",
+                "min": 1,
+                "max": 128000,
+                "order": 2,
+                "label": "Context Length",
+            },
+            "top_k": {
+                "default": 40,
+                "type": "number",
+                "min": 1,
+                "max": 100,
+                "order": 3,
+                "label": "Top K Sampling",
+            },
+            "top_p": {
+                "default": 0.9,
+                "type": "slider",
+                "min": 0,
+                "max": 1,
+                "order": 4,
+                "label": "Top P Sampling",
+            },
+            "repeat_penalty": {
+                "default": 1.1,
+                "type": "number",
+                "min": 0,
+                "max": 2,
+                "order": 5,
+                "label": "Repeat Penalty",
+            },
+            "num_predict": {
+                "default": 1000,
+                "type": "number",
+                "min": -1,
+                "max": 128000,
+                "order": 6,
+                "label": "Max Tokens",
+            },
+            "seed": {
+                "default": None,
+                "type": "number",
+                "min": None,
+                "max": None,
+                "label": "Seed",
+                "order": 7,
+            },
+        },
+    },
 }
 
 
@@ -189,9 +268,37 @@ def history_builder(history, message):
     return history, gr.MultimodalTextbox(value=None, interactive=True)
 
 
-def get_agent(model_name, model_parameters, tools_selected):
+def get_agent(
+    model_name, model_parameters, tools_selected, inference_provider="huggingface"
+):
     print(model_name, model_parameters)
-    llm = ChatOllama(model=model_name, **model_parameters)
+    if inference_provider == "ollama":
+        llm = ChatOllama(model=model_name, **model_parameters)
+    else:
+        endpoint = HuggingFaceEndpoint(
+            repo_id=LLM_CONFIG[model_name]["inference_provider_name"][
+                inference_provider
+            ],
+            task="text-generation",
+            max_new_tokens=model_parameters["num_predict"],
+            do_sample=False,
+            repetition_penalty=model_parameters["repeat_penalty"],
+            provider="groq",
+            temperature=model_parameters["temperature"],
+            seed=model_parameters["seed"],
+            top_p=model_parameters["top_p"],
+            top_k=model_parameters["top_k"],
+            streaming=True,
+        )
+        llm = ChatHuggingFace(
+            llm=endpoint,
+            model_kwargs={
+                "extra_body": {
+                    "reasoning_effort": model_parameters["reasoning"],
+                    "reasoning_format": "parsed"
+                }
+            },
+        )
     agent = create_agent(
         llm,
         tools=filter_tools(tools_selected),
@@ -251,6 +358,7 @@ def denormalize_history(history):
                 if "3d" in message["metadata"]["title"]:
                     message["content"] = gr.Model3D(
                         message["metadata"]["log"],
+                        min_width=300
                     )
                 elif "image" in message["metadata"]["title"]:
                     message["content"] = gr.Image(
