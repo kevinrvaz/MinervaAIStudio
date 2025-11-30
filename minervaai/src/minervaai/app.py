@@ -1,9 +1,11 @@
 import os
 import random
 from uuid import uuid4
+import json
 
 import modal
 
+from minervaai.common import BASE_IMAGE, app, read_mcp_config
 from minervaai.llm import (
     LLM_CONFIG,
     chat_completion,
@@ -15,12 +17,6 @@ from minervaai.llm import (
     set_parameter_field,
 )
 from minervaai.tools import *
-
-# to be fixed when shifting 3d operations to modal
-# from minervaai.tools.threed import (
-#     generate_3d_mesh_from_image,
-#     generate_3d_model_from_image,
-# )
 from minervaai.tools.audio import music_generation, speech_to_text, text_to_speech
 from minervaai.tools.general_purpose import search_tool
 from minervaai.tools.images import (
@@ -30,10 +26,10 @@ from minervaai.tools.images import (
     image_understanding,
     img_to_video,
 )
+from minervaai.tools.threed import generate_3d_model_from_image
 from minervaai.tools.video import text_to_video
-from minervaai.utils import app, image
 
-with image.imports():
+with BASE_IMAGE.imports():
     import gradio as gr
     from fastapi import FastAPI
     from gradio.routes import mount_gradio_app
@@ -45,6 +41,12 @@ if not os.path.exists("message_histories"):
 
 if not os.path.exists("generated_assets"):
     os.makedirs("generated_assets")
+
+if not os.path.exists("config"):
+    os.makedirs("config")
+    if not os.path.exists(os.path.join("config", "mcp_config.json")):
+        with open(os.path.join("config", "mcp_config.json"), "w") as file:
+            json.dump({}, file)
 
 
 def main():
@@ -373,12 +375,10 @@ def main():
                                 outputs=[builtin_tools_selected],
                             )
 
-                with gr.Accordion(label="MCP Servers", open=False):
-                    gr.Markdown("# TODO")
-
-                gr.Markdown("## Agents")
-                with gr.Accordion(label="Agents", open=False):
-                    pass
+                with gr.Accordion(label="MCP Servers", open=True):
+                    mcp_config = read_mcp_config()
+                    for key in mcp_config.keys():
+                        gr.Markdown(key)
 
         with gr.Row(equal_height=True):
             with gr.Column(scale=8):
@@ -450,13 +450,7 @@ def main():
                     lambda val: val, inputs=[model_selector], outputs=[model_selected]
                 )
 
-    with demo.route("Agent Creator"):
-        gr.Navbar(visible=True, main_page_name=main_page)
-
-    # with demo.route("Agent Arena"):
-    #     gr.Navbar(visible=True, main_page_name=main_page)
-
-    with demo.route("Builtin Tools"):
+    with demo.route("Tools Explorer"):
         gr.Navbar(visible=True, main_page_name=main_page)
         with gr.Tab("General Purpose"):
             with gr.Tab("Web Search"):
@@ -624,55 +618,58 @@ def main():
                         music_generation, inputs=[audio_text], outputs=[audio_result]
                     )
 
-        # with gr.Tab("3D"):
-        #     with gr.Tab("Image to 3D Mesh"):
-        #         with gr.Column():
-        #             image_to_3d = gr.Image(
-        #                 label="Image to create 3d mesh from", type="filepath"
-        #             )
-        #             render_button = gr.Button("Generate 3D Mesh")
-        #         with gr.Column():
-        #             model_3d = gr.Model3D(interactive=False, label="Generated 3D Mesh")
-        #         render_button.click(
-        #             generate_3d_mesh_from_image, inputs=[image_to_3d], outputs=[model_3d]
-        #         )
+        with gr.Tab("3D"):
+            with gr.Tab("Image to 3D Model"):
+                with gr.Column():
+                    image_to_3d = gr.Image(
+                        label="Image to create 3d model from", type="filepath"
+                    )
+                    render_button = gr.Button("Generate 3D Model")
+                with gr.Column():
+                    model_3d = gr.Model3D(interactive=False, label="Generated 3D Model")
+                render_button.click(
+                    generate_3d_model_from_image,
+                    inputs=[image_to_3d],
+                    outputs=[model_3d],
+                )
 
-        #     with gr.Tab("Image to 3D Model"):
-        #         with gr.Column():
-        #             image_to_3d = gr.Image(
-        #                 label="Image to create 3d model from", type="filepath"
-        #             )
-        #             render_button = gr.Button("Generate 3D Model")
-        #         with gr.Column():
-        #             model_3d = gr.Model3D(interactive=False, label="Generated 3D Model")
-        #         render_button.click(
-        #             generate_3d_model_from_image, inputs=[image_to_3d], outputs=[model_3d]
-        #         )
+    def add_mcp_server(mcp_server_name, mcp_transport, mcp_cmd, mcp_args):
+        new_mcp = {}
+        new_mcp[mcp_server_name] = {
+            "transport": mcp_transport,
+            "command": mcp_cmd,
+            "args": mcp_args.split(","),
+        }
+        mcp_servers = read_mcp_config()
+        return {**mcp_servers, **new_mcp}
 
     with demo.route("MCP Servers"):
         gr.Navbar(visible=True, main_page_name=main_page)
-
-    # TODO
-    # with demo.route("Model Manager"):
-    #     navbar = gr.Navbar(visible=True, main_page_name=main_page)
-
-    #     with gr.Tab("Model Inference Provider"):
-    #         choices = ["ollama", "system", "modal"]
-    #         gr.Markdown("# Text Generation & Reasoning Models")
-    #         with gr.Row():
-    #             gr.Dropdown(choices=choices, label="gpt-oss:20b", interactive=True)
-    #             gr.Dropdown(choices=choices, label="gpt-oss:120b", interactive=True)
-
-    #         gr.Markdown("# Image Models")
-    #         with gr.Row():
-    #             gr.Dropdown(choices=choices, label="FLUX.1-dev", interactive=True)
-    #             gr.Dropdown(choices=choices, label="FLUX.1-schnell", interactive=True)
-
-    #     with gr.Tab("Deploy"):
-    #         gr.Markdown("Deploy Models TODO")
-    # TODO
-    # with demo.route("Settings"):
-    #     navbar = gr.Navbar(visible=True, main_page_name=main_page)
+        mcp = gr.TextArea(
+            read_mcp_config(), label="Available MCP Servers", interactive=False
+        )
+        mcp_server_name = gr.Textbox(
+            placeholder="MCP Server name", interactive=True, label="MCP Server name"
+        )
+        mcp_transport = gr.Dropdown(
+            choices=["stdio", "streamable_http"],
+            label="MCP Transport",
+            interactive=True,
+        )
+        mcp_cmd = gr.Textbox(
+            placeholder="MCP Command", interactive=True, label="MCP Command"
+        )
+        mcp_args = gr.TextArea(
+            placeholder="Comma separated command arguments",
+            interactive=True,
+            label="Comma separated command arguments",
+        )
+        add_server = gr.Button("Add MCP Server")
+        add_server.click(
+            add_mcp_server,
+            inputs=[mcp_server_name, mcp_transport, mcp_cmd, mcp_args],
+            outputs=[mcp],
+        )
 
     return demo
 
@@ -701,7 +698,7 @@ def local():
 
 
 @app.function(
-    image=image,
+    image=BASE_IMAGE,
     max_containers=1,
 )
 @modal.concurrent(max_inputs=100)

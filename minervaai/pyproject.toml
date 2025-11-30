@@ -45,6 +45,7 @@ dependencies = [
   "numexpr",
   "text-generation",
   "langchain-huggingface",
+  "langchain-mcp-adapters"
 ]
 
 [project.urls]

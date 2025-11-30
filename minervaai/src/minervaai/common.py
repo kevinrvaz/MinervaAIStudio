@@ -4,9 +4,10 @@ import string
 from pathlib import Path
 
 import modal
+import json
 
 app = modal.App("minervaai-studio")
-image = (
+BASE_IMAGE = (
     modal.Image.from_registry("nvidia/cuda:12.8.0-devel-ubuntu22.04", add_python="3.12")
     .entrypoint([])
     .uv_pip_install(
@@ -38,11 +39,12 @@ image = (
         "text-generation",
         "langchain-huggingface",
         "scipy",
+        "langchain-mcp-adapters",
     )
     .env({"HF_XET_HIGH_PERFORMANCE": "1"})
 )
 
-threed_image = (
+THREED_IMAGE = (
     modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.10")
     .apt_install("git")
     .apt_install("clang")
@@ -124,10 +126,7 @@ threed_image = (
         "hf_xet",
         extra_index_url="https://download.blender.org/pypi/",
     )
-    .uv_pip_install(
-        "ddgs==9.9.1",
-        "langchain==1.0.7",
-    )
+    .uv_pip_install("ddgs==9.9.1", "langchain==1.0.7", "langchain-mcp-adapters")
     .entrypoint([])
 )
 
@@ -145,3 +144,10 @@ def create_random_file_name(ext, with_suffix=True):
     if with_suffix:
         return os.path.join("generated_assets", f"{file}.{ext}")
     return f"{file}.{ext}"
+
+
+def read_mcp_config():
+    with open(os.path.join("config", "mcp_config.json")) as file:
+        mcp_config = json.load(file)
+        return mcp_config
+    return {}

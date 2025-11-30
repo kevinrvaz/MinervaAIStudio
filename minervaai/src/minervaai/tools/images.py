@@ -1,9 +1,11 @@
 import base64
 from io import BytesIO
-from minervaai.utils import app, create_random_file_name, image, secrets, volumes
+
 from langchain.tools import tool
 
-with image.imports():
+from minervaai.common import BASE_IMAGE, app, create_random_file_name, secrets, volumes
+
+with BASE_IMAGE.imports():
     import torch
     from diffusers import (
         FluxKontextPipeline,
@@ -19,7 +21,6 @@ with image.imports():
     from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
 
-
 def pil_to_base64(pil_image, format="PNG"):
     buffered = BytesIO()
     pil_image.save(buffered, format=format)
@@ -28,7 +29,9 @@ def pil_to_base64(pil_image, format="PNG"):
     return base64_string
 
 
-@app.function(gpu="h100", image=image, volumes=volumes, secrets=secrets, timeout=1200)
+@app.function(
+    gpu="h100", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
+)
 def img_to_video_internal(image: str, prompt: str, negative_prompt: str):
     pipe = LTXConditionPipeline.from_pretrained(
         "Lightricks/LTX-Video-0.9.7-dev", torch_dtype=torch.bfloat16
@@ -106,7 +109,9 @@ def img_to_video(image: str, prompt: str, negative_prompt: str):
     return file_name
 
 
-@app.function(gpu="h100", image=image, volumes=volumes, secrets=secrets, timeout=1200)
+@app.function(
+    gpu="h100", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
+)
 def generate_image_internal(prompt: str):
     ckpt_path = (
         "https://huggingface.co/city96/FLUX.1-dev-gguf/blob/main/flux1-dev-Q4_1.gguf"
@@ -127,7 +132,9 @@ def generate_image_internal(prompt: str):
     return byte_stream.getvalue()
 
 
-@app.function(gpu="h100", image=image, volumes=volumes, secrets=secrets, timeout=1200)
+@app.function(
+    gpu="h100", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
+)
 def image_editing_internal(image: str, prompt: str):
     pipe = FluxKontextPipeline.from_pretrained(
         "black-forest-labs/FLUX.1-Kontext-dev", torch_dtype=torch.bfloat16
@@ -170,7 +177,9 @@ def image_resize_to_new_width(file_path: str, new_width: int) -> str:
     return file_name
 
 
-@app.function(gpu="h100", image=image, volumes=volumes, secrets=secrets, timeout=1200)
+@app.function(
+    gpu="h100", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
+)
 def image_understanding_internal(image: str, prompt: str) -> str:
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         "Qwen/Qwen3-VL-2B-Instruct", dtype="auto", device_map="auto"

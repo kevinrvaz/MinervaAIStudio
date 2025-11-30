@@ -1,13 +1,14 @@
 from langchain.tools import tool
-from minervaai.utils import app, create_random_file_name, image, secrets, volumes
 
-with image.imports():
+from minervaai.common import BASE_IMAGE, app, create_random_file_name, secrets, volumes
+
+with BASE_IMAGE.imports():
     import torch
     from diffusers import LTXConditionPipeline, LTXLatentUpsamplePipeline
     from diffusers.utils import export_to_video
 
     @app.function(
-        gpu="h100", image=image, volumes=volumes, secrets=secrets, timeout=1200
+        gpu="h100", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
     )
     def text_to_video_internal(prompt, negative_prompt):
         pipe = LTXConditionPipeline.from_pretrained(

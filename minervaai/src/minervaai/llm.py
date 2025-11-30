@@ -1,14 +1,17 @@
+import asyncio
 import json
 import os
 from copy import deepcopy
 from datetime import datetime
-from minervaai.utils import image
+from minervaai.common import BASE_IMAGE, read_mcp_config
 import gradio as gr
 
-with image.imports():
+with BASE_IMAGE.imports():
     from langchain.agents import create_agent
     from langchain_ollama import ChatOllama
     from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+    from langchain_mcp_adapters.client import MultiServerMCPClient
+
 
 from minervaai.tools import *
 
@@ -268,8 +271,12 @@ def history_builder(history, message):
     return history, gr.MultimodalTextbox(value=None, interactive=True)
 
 
-def get_agent(
-    model_name, model_parameters, tools_selected, inference_provider="huggingface"
+async def get_agent(
+    model_name,
+    model_parameters,
+    tools_selected,
+    mcp_servers,
+    inference_provider="ollama",
 ):
     print(model_name, model_parameters)
     if inference_provider == "ollama":
@@ -295,13 +302,20 @@ def get_agent(
             model_kwargs={
                 "extra_body": {
                     "reasoning_effort": model_parameters["reasoning"],
-                    "reasoning_format": "parsed"
+                    "reasoning_format": "parsed",
                 }
             },
         )
+
+    if mcp_servers:
+        mcp_client = MultiServerMCPClient(mcp_servers)
+        mcp_tools = await mcp_client.get_tools()
+    else:
+        mcp_tools = []
+
     agent = create_agent(
         llm,
-        tools=filter_tools(tools_selected),
+        tools=filter_tools(tools_selected) + mcp_tools,
         system_prompt=LLM_CONFIG[model_name]["system_prompt"],
     )
     return agent
@@ -357,8 +371,7 @@ def denormalize_history(history):
             if os.path.isfile(message["metadata"]["log"]):
                 if "3d" in message["metadata"]["title"]:
                     message["content"] = gr.Model3D(
-                        message["metadata"]["log"],
-                        min_width=300
+                        message["metadata"]["log"], min_width=300, height=400
                     )
                 elif "image" in message["metadata"]["title"]:
                     message["content"] = gr.Image(
@@ -388,11 +401,14 @@ def denormalize_history(history):
             message["metadata"] = None
 
 
-def chat_completion(history, model_name, model_parameters, tools_selected):
+async def chat_completion(
+    history, model_name, model_parameters, tools_selected
+):
+    mcp_servers = read_mcp_config()
+    print("Available mcp servers", mcp_servers)
     normalize_history(history)
-    for chunk in get_agent(model_name, model_parameters, tools_selected).stream(
-        {"messages": history}, stream_mode="updates"
-    ):
+    agent = await get_agent(model_name, model_parameters, tools_selected, mcp_servers)
+    async for chunk in agent.astream({"messages": history}, stream_mode="updates"):
         for step, data in chunk.items():
             if step == "model":
                 for message in data["messages"][-1].content_blocks:

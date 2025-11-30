@@ -1,9 +1,11 @@
 import gc
 import os
-from minervaai.utils import image
+
 import torch
 
-with image.imports():
+from minervaai.common import BASE_IMAGE
+
+with BASE_IMAGE.imports():
     import numpy as np
     import soundfile as sf
     from kokoro import KPipeline
@@ -12,7 +14,7 @@ with image.imports():
 from langchain.tools import tool
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
-from minervaai.utils import create_random_file_name
+from minervaai.common import create_random_file_name
 
 
 def text_to_speech(text):

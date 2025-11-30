@@ -1,11 +1,12 @@
-# from minervaai.tools.audio import AUDIO_TOOLS
-from minervaai.utils import threed_image, image
-with image.imports():
+from minervaai.common import THREED_IMAGE, BASE_IMAGE
+
+with BASE_IMAGE.imports():
+    # from minervaai.tools.audio import AUDIO_TOOLS
     from minervaai.tools.general_purpose import GENERAL_TOOLS
     from minervaai.tools.images import IMAGE_TOOLS
     from minervaai.tools.video import VIDEO_TOOLS
 
-with threed_image.imports():
+with THREED_IMAGE.imports():
     from minervaai.tools.threed import THREED_TOOLS
 
 

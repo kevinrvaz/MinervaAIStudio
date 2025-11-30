@@ -33,7 +33,7 @@ def create_random_file_name(ext):
     return os.path.join("generated_assets", f"{file}.{ext}")
 
 
-threed_image = (
+THREED_IMAGE = (
     modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.10")
     .apt_install("git")
     .apt_install("clang")
@@ -116,7 +116,7 @@ threed_image = (
     .entrypoint([])
 )
 
-with threed_image.imports():
+with THREED_IMAGE.imports():
     import sys
 
     sys.path.insert(0, "/Hunyuan3D-2.1/hy3dshape")
@@ -129,7 +129,7 @@ with threed_image.imports():
 
 
 @app.function(
-    gpu="h100", image=threed_image, volumes=volumes, secrets=secrets, timeout=1200
+    gpu="h100", image=THREED_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
 )
 def generate_3d_model_from_image(image_str: str) -> str:
     link_path_str = "/Hunyuan3D-2.1/hy3dpaint/ckpt/RealESRGAN_x4plus.pth"

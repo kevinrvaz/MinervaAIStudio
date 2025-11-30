@@ -1,21 +1,23 @@
-from langchain.tools import tool
-from PIL import Image
 import base64
-from io import BytesIO
 import shutil
-from minervaai.utils import (
-    create_random_file_name,
-    threed_image,
-    outputs,
-    volumes,
-    app,
-    OUTPUTS_PATH,
-    secrets,
-)
-from minervaai.tools.images import pil_to_base64
+from io import BytesIO
 from pathlib import Path
 
-with threed_image.imports():
+from langchain.tools import tool
+from PIL import Image
+
+from minervaai.common import (
+    OUTPUTS_PATH,
+    THREED_IMAGE,
+    app,
+    create_random_file_name,
+    outputs,
+    secrets,
+    volumes,
+)
+from minervaai.tools.images import pil_to_base64
+
+with THREED_IMAGE.imports():
     import sys
 
     sys.path.insert(0, "/Hunyuan3D-2.1/hy3dshape")
@@ -28,7 +30,7 @@ with threed_image.imports():
 
 
 @app.function(
-    gpu="h100", image=threed_image, volumes=volumes, secrets=secrets, timeout=1200
+    gpu="h100", image=THREED_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
 )
 def generate_3d_model_from_image_internal(image_str: str) -> str:
     link_path_str = "/Hunyuan3D-2.1/hy3dpaint/ckpt/RealESRGAN_x4plus.pth"
