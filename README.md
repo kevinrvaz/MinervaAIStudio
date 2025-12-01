@@ -3,7 +3,7 @@
 Minerva AI is an AI assistant that can help in creative tasks like creating and editing Images, Video, Audio and 3D structures using open weight models.
 
 ## Demo Link - 
-<a href="https://www.youtube.com/watch?v=qiz4rxf_RY4">Demo</a>
+<a href="https://www.youtube.com/watch?v=JKW4LsLfK1E">Demo</a>
 
 ## Installation:-
 
