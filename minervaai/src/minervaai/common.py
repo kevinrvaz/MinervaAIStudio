@@ -9,6 +9,7 @@ import json
 app = modal.App("minervaai-studio")
 BASE_IMAGE = (
     modal.Image.from_registry("nvidia/cuda:12.8.0-devel-ubuntu22.04", add_python="3.12")
+    .apt_install("ffmpeg")
     .entrypoint([])
     .uv_pip_install(
         "gradio==6.0.1",
@@ -57,13 +58,10 @@ THREED_IMAGE = (
         "torchaudio==2.5.1",
         index_url="https://download.pytorch.org/whl/cu124",
     )
-    .run_commands("ls -lha")
-    .run_commands("pwd")
     .run_commands(
         "/.uv/uv pip install --python $(command -v python) --compile-bytecode -r requirements.txt"
     )
     .workdir("hy3dpaint/custom_rasterizer/")
-    .run_commands("ls")
     .apt_install(
         [
             "libgl1-mesa-glx",
@@ -96,7 +94,6 @@ THREED_IMAGE = (
             "HF_XET_HIGH_PERFORMANCE": "1",
             "CUDA_HOME": "/usr/local/cuda",
             "PATH": "${CUDA_HOME}/bin:${PATH}",
-            # "LD_LIBRARY_PATH": "${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}",
             "TORCH_CUDA_ARCH_LIST": "6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0",
             "PYTHONDONTWRITEBYTECODE": "1",
             "PYTHONUNBUFFERED": "1",
@@ -120,7 +117,6 @@ THREED_IMAGE = (
     )
     .workdir("/Hunyuan3D-2.1/")
     .apt_install("libxi6", "libxkbcommon0", "libsm6", "libxext6", "libxrender-dev")
-    .run_commands("echo $LD_LIBRARY_PATH")
     .uv_pip_install(
         "bpy==3.6.0",
         "hf_xet",

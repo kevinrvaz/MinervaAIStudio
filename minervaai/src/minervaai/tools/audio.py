@@ -3,7 +3,7 @@ import os
 
 import torch
 
-from minervaai.common import BASE_IMAGE
+from minervaai.common import BASE_IMAGE, app, volumes, secrets
 
 with BASE_IMAGE.imports():
     import numpy as np
@@ -44,15 +44,20 @@ def text_to_speech(text):
     return file_name
 
 
-def speech_to_text(file_path: str) -> str:
-    device = "mps" if torch.mps.is_available() else "cpu"
+@app.function(
+    gpu="T4", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
+)
+def speech_to_text_internal(sound_file) -> str:
+    with open("sound.wav", "wb") as file:
+        file.write(sound_file)
+
     model_id = "openai/whisper-large-v3-turbo"
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
         model_id,
         torch_dtype=torch.float32,
         use_safetensors=True,
     )
-    model.to(device)
+    model.to("cuda")
     processor = AutoProcessor.from_pretrained(model_id)
 
     pipe = pipeline(
@@ -61,13 +66,17 @@ def speech_to_text(file_path: str) -> str:
         tokenizer=processor.tokenizer,
         feature_extractor=processor.feature_extractor,
         dtype=torch.float32,
-        device=device,
+        device="cuda",
     )
 
-    res = pipe(file_path)
-    del pipe
-    gc.collect()
+    res = pipe("sound.wav")
     return res["text"]
+
+
+def speech_to_text(file_path: str) -> str:
+    with open(file_path, "rb") as file:
+        file_contents = file.read()
+    return speech_to_text_internal.remote(file_contents)
 
 
 def music_generation(prompt):
