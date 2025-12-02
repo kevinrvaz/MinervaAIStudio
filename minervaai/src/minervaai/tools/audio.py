@@ -1,9 +1,10 @@
-import gc
 import os
+import shutil
+from pathlib import Path
 
 import torch
 
-from minervaai.common import BASE_IMAGE, app, volumes, secrets
+from minervaai.common import BASE_IMAGE, OUTPUTS_PATH, app, outputs, secrets, volumes
 
 with BASE_IMAGE.imports():
     import numpy as np
@@ -17,10 +18,13 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from minervaai.common import create_random_file_name
 
 
-def text_to_speech(text):
-    pipeline = KPipeline(lang_code="a", device="mps")
+@app.function(
+    gpu="T4", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
+)
+def text_to_speech_internal(text):
+    pipeline = KPipeline(lang_code="a", device="cuda")
     generator = pipeline(text, voice="af_heart")
-    file_name = create_random_file_name("wav")
+    file_name = create_random_file_name("wav", False)
     for _, _, audio in generator:
         data = np.asarray(audio)
         if data.ndim == 1:
@@ -38,9 +42,21 @@ def text_to_speech(text):
             ) as sound:
                 sound.write(audio)
 
-    del generator
-    del pipeline
-    gc.collect()
+    shutil.copy(file_name, Path(OUTPUTS_PATH) / file_name)
+    outputs.commit()
+    return file_name
+
+
+def text_to_speech(text):
+    file_name = create_random_file_name("wav")
+    generated_speech = text_to_speech_internal.remote(text)
+    data = b""
+    for chunk in outputs.read_file(generated_speech):
+        data += chunk
+
+    with open(file_name, "wb") as file:
+        file.write(data)
+
     return file_name
 
 
@@ -79,13 +95,29 @@ def speech_to_text(file_path: str) -> str:
     return speech_to_text_internal.remote(file_contents)
 
 
-def music_generation(prompt):
+@app.function(
+    gpu="H100", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
+)
+def music_generation_internal(prompt):
     synthesiser = pipeline("text-to-audio", "facebook/musicgen-large")
     music = synthesiser(prompt, forward_params={"do_sample": True})
-    file_name = create_random_file_name("wav")
+    file_name = create_random_file_name("wav", False)
     scipy.io.wavfile.write(file_name, rate=music["sampling_rate"], data=music["audio"])
-    del synthesiser
-    gc.collect()
+    shutil.copy(file_name, Path(OUTPUTS_PATH) / file_name)
+    outputs.commit()
+    return file_name
+
+
+def music_generation(prompt):
+    generated_music = music_generation_internal.remote(prompt)
+    file_name = create_random_file_name("wav")
+    data = b""
+    for chunk in outputs.read_file(generated_music):
+        data += chunk
+
+    with open(file_name, "wb") as file:
+        file.write(data)
+
     return file_name
 
 

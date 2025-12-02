@@ -3,7 +3,7 @@
 Minerva AI is an AI assistant that can help in creative tasks like creating and editing Images, Video, Audio and 3D structures using open weight models.
 
 ## Demo Link - 
-<a href="https://www.youtube.com/watch?v=JKW4LsLfK1E">Demo</a>
+[![Minerva AI Studio](https://img.youtube.com/vi/JKW4LsLfK1E/0.jpg)](https://www.youtube.com/embed/JKW4LsLfK1E "Minerva AI Studio")
 
 ## Installation:-
 
@@ -19,14 +19,17 @@ Minerva AI is an AI assistant that can help in creative tasks like creating and 
 Minerva is a multimodal agent which can work with images, videos, 3d and audio modalities, below are some of its features:-
 
 - Builtins Tools:-
-    - duckduckgo_search	Searches the web (DuckDuckGo) and returns results.
-    - generate_image_tool	Creates an image from a prompt.
-    - image_resizer_tool	Resizes an image to a new width.
-    - image_understanding_tool	Analyzes an image and answers a prompt about its content.
-    - image_editing_tool	Edits an image based on a prompt.
-    - img_to_video_tool	Turns an image into a short video using a prompt and negative prompt.
-    - text_to_video_tool	Generates a video from a textual prompt and negative prompt.
-    - generate_3d_object_from_image_tool	Builds a GLB 3‑D object from an image.
+    - duckduckgo_search: Searches the web (DuckDuckGo) and returns results.
+    - generate_image_tool: Creates an image from a prompt.
+    - image_resizer_tool: Resizes an image to a new width.
+    - image_understanding_tool: Analyzes an image and answers a prompt about its content.
+    - image_editing_tool: Edits an image based on a prompt.
+    - img_to_video_tool: Turns an image into a short video using a prompt and negative prompt.
+    - text_to_video_tool: Generates a video from a textual prompt and negative prompt.
+    - generate_3d_object_from_image_tool: Builds a GLB 3‑D object from an image.
+    - text_to_speech_tool: Convert text to an audio file.
+    - speech_to_text_tool: Transcribe an audio file to text.
+    - music_generation_tool: Generate a music file from a prompt.
 - MCP Tools support, can be configured from the mcp servers section
 - Full control over model params and session tracking
 - Explore tools via Tools explorer section
