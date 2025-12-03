@@ -51,14 +51,14 @@ dependencies = [
 [project.urls]
 
 [tool.hatch.version]
-path = "src/minervaai/__about__.py"
+path = "minervaai/__about__.py"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
   "mypy>=1.0.0",
 ]
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/minervaai tests}"
+check = "mypy --install-types --non-interactive {args:minervaai tests}"
 [tool.hatch.envs.default]
 python = "3.12"
 
@@ -67,11 +67,11 @@ source_pkgs = ["minervaai", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/minervaai/__about__.py",
+  "minervaai/__about__.py",
 ]
 
 [tool.coverage.paths]
-minervaai = ["src/minervaai", "*/minervaai/src/minervaai"]
+minervaai = ["minervaai", "*/minervaai"]
 tests = ["tests", "*/minervaai/tests"]
 
 [tool.coverage.report]

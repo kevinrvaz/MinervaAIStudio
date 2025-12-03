@@ -66,8 +66,8 @@ def main():
 
         chatbot = gr.Chatbot(
             avatar_images=(
-                os.path.join("src", "minervaai", "images", "user.png"),
-                os.path.join("src", "minervaai", "images", "owl.png"),
+                os.path.join("minervaai", "images", "user.png"),
+                os.path.join("minervaai", "images", "owl.png"),
             ),
             show_label=False,
             elem_id="chatbot-section",
@@ -127,7 +127,7 @@ def main():
                         ],
                     )
                     delete_chat = gr.Button(
-                        icon=os.path.join("src", "minervaai", "images", "dustbin.png"),
+                        icon=os.path.join("minervaai", "images", "dustbin.png"),
                         value="",
                     )
                     delete_chat.click(
@@ -693,7 +693,7 @@ def local():
         }
         """,
         theme=gr.themes.Soft(),
-        favicon_path=os.path.join("src", "minervaai", "images", "owl.png"),
+        favicon_path=os.path.join("minervaai", "images", "owl.png"),
     )
 
 
@@ -724,5 +724,5 @@ def remote():
         }
         """,
         theme=gr.themes.Soft(),
-        favicon_path=os.path.join("src", "minervaai", "images", "owl.png"),
+        favicon_path=os.path.join("minervaai", "images", "owl.png"),
     )
