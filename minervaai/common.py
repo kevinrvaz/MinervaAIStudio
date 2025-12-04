@@ -147,3 +147,15 @@ def read_mcp_config():
         mcp_config = json.load(file)
         return mcp_config
     return {}
+
+
+def read_remote_file(file_name, file_ext):
+    file_name = create_random_file_name(file_ext)
+    data = b""
+    for chunk in outputs.read_file(file_name):
+        data += chunk
+
+    with open(file_name, "wb") as file:
+        file.write(data)
+
+    return file_name

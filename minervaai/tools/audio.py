@@ -4,7 +4,15 @@ from pathlib import Path
 
 import torch
 
-from minervaai.common import BASE_IMAGE, OUTPUTS_PATH, app, outputs, secrets, volumes
+from minervaai.common import (
+    BASE_IMAGE,
+    OUTPUTS_PATH,
+    app,
+    outputs,
+    read_remote_file,
+    secrets,
+    volumes,
+)
 
 with BASE_IMAGE.imports():
     import numpy as np
@@ -48,16 +56,8 @@ def text_to_speech_internal(text):
 
 
 def text_to_speech(text):
-    file_name = create_random_file_name("wav")
     generated_speech = text_to_speech_internal.remote(text)
-    data = b""
-    for chunk in outputs.read_file(generated_speech):
-        data += chunk
-
-    with open(file_name, "wb") as file:
-        file.write(data)
-
-    return file_name
+    return read_remote_file(generated_speech, "wav")
 
 
 @app.function(
@@ -110,15 +110,7 @@ def music_generation_internal(prompt):
 
 def music_generation(prompt):
     generated_music = music_generation_internal.remote(prompt)
-    file_name = create_random_file_name("wav")
-    data = b""
-    for chunk in outputs.read_file(generated_music):
-        data += chunk
-
-    with open(file_name, "wb") as file:
-        file.write(data)
-
-    return file_name
+    return read_remote_file(generated_music, "wav")
 
 
 @tool

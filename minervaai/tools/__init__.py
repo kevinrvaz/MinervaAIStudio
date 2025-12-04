@@ -1,4 +1,4 @@
-from minervaai.common import THREED_IMAGE, BASE_IMAGE
+from minervaai.common import BASE_IMAGE, THREED_IMAGE
 
 with BASE_IMAGE.imports():
     from minervaai.tools.audio import AUDIO_TOOLS

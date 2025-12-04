@@ -12,6 +12,7 @@ from minervaai.common import (
     app,
     create_random_file_name,
     outputs,
+    read_remote_file,
     secrets,
     volumes,
 )
@@ -22,9 +23,12 @@ with THREED_IMAGE.imports():
 
     sys.path.insert(0, "/Hunyuan3D-2.1/hy3dshape")
     sys.path.insert(0, "/Hunyuan3D-2.1/hy3dpaint")
-    from torchvision_fix import apply_fix  # type: ignore
-    from textureGenPipeline import Hunyuan3DPaintPipeline, Hunyuan3DPaintConfig  # type: ignore
     from hy3dshape.pipelines import Hunyuan3DDiTFlowMatchingPipeline  # type: ignore
+    from textureGenPipeline import ( # type: ignore
+        Hunyuan3DPaintConfig,  # type: ignore
+        Hunyuan3DPaintPipeline, # type: ignore
+    )
+    from torchvision_fix import apply_fix  # type: ignore
 
     apply_fix()
 
@@ -58,15 +62,7 @@ def generate_3d_model_from_image(file_path: str):
     img = Image.open(file_path)
     b64 = pil_to_base64(img, img.format)
     mesh_name = generate_3d_model_from_image_internal.remote(b64)
-    file_name = create_random_file_name("glb")
-    data = b""
-    for chunk in outputs.read_file(mesh_name):
-        data += chunk
-
-    with open(file_name, "wb") as file:
-        file.write(data)
-
-    return file_name
+    return read_remote_file(mesh_name, "glb")
 
 
 @tool
