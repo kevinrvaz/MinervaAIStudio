@@ -1,10 +1,10 @@
+import json
 import os
 import random
 import string
 from pathlib import Path
 
 import modal
-import json
 
 app = modal.App("minervaai-studio")
 BASE_IMAGE = (

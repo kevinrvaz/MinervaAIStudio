@@ -1,7 +1,7 @@
+import json
 import os
 import random
 from uuid import uuid4
-import json
 
 import modal
 
@@ -341,22 +341,22 @@ def main():
                                 outputs=[builtin_tools_selected],
                             )
 
-                    # with gr.Accordion(label=AUDIO_TOOLS["label"], open=False):
-                    #     for tool in AUDIO_TOOLS["tools"]:
-                    #         box = gr.Checkbox(
-                    #             value=tool["default"],
-                    #             label=tool["label"],
-                    #             interactive=True,
-                    #         )
-                    #         box.input(
-                    #             tool_setter,
-                    #             inputs=[
-                    #                 gr.State(tool["tool_id"]),
-                    #                 builtin_tools_selected,
-                    #                 box,
-                    #             ],
-                    #             outputs=[builtin_tools_selected],
-                    #         )
+                    with gr.Accordion(label=AUDIO_TOOLS["label"], open=False):
+                        for tool in AUDIO_TOOLS["tools"]:
+                            box = gr.Checkbox(
+                                value=tool["default"],
+                                label=tool["label"],
+                                interactive=True,
+                            )
+                            box.input(
+                                tool_setter,
+                                inputs=[
+                                    gr.State(tool["tool_id"]),
+                                    builtin_tools_selected,
+                                    box,
+                                ],
+                                outputs=[builtin_tools_selected],
+                            )
 
                     with gr.Accordion(label=THREED_TOOLS["label"], open=False):
                         for tool in THREED_TOOLS["tools"]:

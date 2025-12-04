@@ -2,15 +2,16 @@ import json
 import os
 from copy import deepcopy
 from datetime import datetime
-from minervaai.common import BASE_IMAGE, read_mcp_config
+
 import gradio as gr
+
+from minervaai.common import BASE_IMAGE, read_mcp_config
 
 with BASE_IMAGE.imports():
     from langchain.agents import create_agent
     from langchain_ollama import ChatOllama
     from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
     from langchain_mcp_adapters.client import MultiServerMCPClient
-
 
 from minervaai.tools import *
 
@@ -400,9 +401,7 @@ def denormalize_history(history):
             message["metadata"] = None
 
 
-async def chat_completion(
-    history, model_name, model_parameters, tools_selected
-):
+async def chat_completion(history, model_name, model_parameters, tools_selected):
     mcp_servers = read_mcp_config()
     print("Available mcp servers", mcp_servers)
     normalize_history(history)
