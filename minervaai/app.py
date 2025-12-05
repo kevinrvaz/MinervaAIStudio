@@ -52,7 +52,7 @@ if not os.path.exists("config"):
 def main():
     with gr.Blocks(fill_height=True, title="Minerva AI Studio") as demo:
         model_config_state = gr.State({})
-        model_selected = gr.State("gpt-oss:20b")
+        model_selected = gr.State("gpt-oss:120b")
         builtin_tools_selected = gr.State(default_builtin_tool_setter())
         current_chat_session = gr.State(str(uuid4()))
         rerender_message_histories = gr.State(False)
@@ -194,6 +194,9 @@ def main():
                             ]["label"],
                             interactive=True,
                             render=False,
+                            info=LLM_CONFIG[model_selected]["inference_parameters"][
+                                parameter
+                            ].get("info", "")
                         )
                     )
                     blocks[-1].change(
@@ -224,6 +227,9 @@ def main():
                             label=LLM_CONFIG[model_selected]["inference_parameters"][
                                 parameter
                             ]["label"],
+                            info=LLM_CONFIG[model_selected]["inference_parameters"][
+                                parameter
+                            ].get("info", "")
                         )
                     )
                     blocks[-1].select(
@@ -257,6 +263,9 @@ def main():
                             ]["label"],
                             interactive=True,
                             render=False,
+                            info=LLM_CONFIG[model_selected]["inference_parameters"][
+                                parameter
+                            ].get("info", "")
                         )
                     )
                     blocks[-1].change(
