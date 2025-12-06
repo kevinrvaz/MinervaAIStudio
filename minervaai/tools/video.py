@@ -1,3 +1,6 @@
+import base64
+from io import BytesIO
+
 from langchain.tools import tool
 
 from minervaai.common import BASE_IMAGE, app, create_random_file_name, secrets, volumes
@@ -5,12 +8,11 @@ from minervaai.common import BASE_IMAGE, app, create_random_file_name, secrets, 
 with BASE_IMAGE.imports():
     import torch
     from diffusers import LTXConditionPipeline, LTXLatentUpsamplePipeline
-    from diffusers.utils import export_to_video
+    from diffusers.pipelines.ltx.pipeline_ltx_condition import LTXVideoCondition
+    from diffusers.utils import export_to_video, load_video
+    from PIL import Image
 
-    @app.function(
-        gpu="h100", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
-    )
-    def text_to_video_internal(prompt, negative_prompt):
+    def common_ltx_pipeline(image, prompt, negative_prompt):
         pipe = LTXConditionPipeline.from_pretrained(
             "Lightricks/LTX-Video-0.9.7-dev", torch_dtype=torch.bfloat16
         )
@@ -28,9 +30,18 @@ with BASE_IMAGE.imports():
             width = width - (width % pipe.vae_spatial_compression_ratio)
             return height, width
 
-        expected_height, expected_width = 512, 704
+        if image:
+            decoded_bytes = base64.b64decode(image)
+            image_stream = BytesIO(decoded_bytes)
+            pil_image = Image.open(image_stream)
+            video = load_video(export_to_video([pil_image]))
+            conditions = [LTXVideoCondition(video=video, frame_index=0)]
+        else:
+            conditions = None
+
+        expected_height, expected_width = 480, 832
         downscale_factor = 2 / 3
-        num_frames = 121
+        num_frames = 96
 
         downscaled_height, downscaled_width = int(
             expected_height * downscale_factor
@@ -41,7 +52,7 @@ with BASE_IMAGE.imports():
             )
         )
         latents = pipe(
-            conditions=None,
+            conditions=conditions,
             prompt=prompt,
             negative_prompt=negative_prompt,
             width=downscaled_width,
@@ -56,6 +67,7 @@ with BASE_IMAGE.imports():
         upscaled_latents = pipe_upsample(latents=latents, output_type="latent").frames
 
         video = pipe(
+            conditions=conditions,
             prompt=prompt,
             negative_prompt=negative_prompt,
             width=upscaled_width,
@@ -69,9 +81,14 @@ with BASE_IMAGE.imports():
             generator=torch.Generator().manual_seed(0),
             output_type="pil",
         ).frames[0]
-
         video = [frame.resize((expected_width, expected_height)) for frame in video]
         return video
+
+    @app.function(
+        gpu="h100", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
+    )
+    def text_to_video_internal(prompt, negative_prompt):
+        return common_ltx_pipeline(None, prompt, negative_prompt)
 
     def text_to_video(prompt, negative_prompt):
         file_name = create_random_file_name("mp4")

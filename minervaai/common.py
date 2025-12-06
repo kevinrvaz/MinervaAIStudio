@@ -34,13 +34,14 @@ BASE_IMAGE = (
         "imageio-ffmpeg==0.6.0",
         "fastapi[standard]",
         "bitsandbytes",
-        "jinja2",
-        "langchainhub",
-        "numexpr",
-        "text-generation",
-        "langchain-huggingface",
-        "scipy",
-        "langchain-mcp-adapters",
+        "langchainhub==0.1.21",
+        "numexpr==2.14.1",
+        "text-generation==0.7.0",
+        "langchain-huggingface==1.1.0",
+        "langchain-mcp-adapters==0.1.14",
+        "scipy==1.16.3",
+        "opencv-python==4.12.0.88",
+        "imageio"
     )
     .env({"HF_XET_HIGH_PERFORMANCE": "1"})
 )

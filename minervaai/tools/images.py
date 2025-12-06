@@ -12,13 +12,12 @@ with BASE_IMAGE.imports():
         FluxPipeline,
         FluxTransformer2DModel,
         GGUFQuantizationConfig,
-        LTXConditionPipeline,
-        LTXLatentUpsamplePipeline,
     )
-    from diffusers.pipelines.ltx.pipeline_ltx_condition import LTXVideoCondition
-    from diffusers.utils import export_to_video, load_video
+    from diffusers.utils import export_to_video
     from PIL import Image
     from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
+
+    from minervaai.tools.video import common_ltx_pipeline
 
 
 def pil_to_base64(pil_image, format="PNG"):
@@ -33,71 +32,7 @@ def pil_to_base64(pil_image, format="PNG"):
     gpu="h100", image=BASE_IMAGE, volumes=volumes, secrets=secrets, timeout=1200
 )
 def img_to_video_internal(image: str, prompt: str, negative_prompt: str):
-    pipe = LTXConditionPipeline.from_pretrained(
-        "Lightricks/LTX-Video-0.9.7-dev", torch_dtype=torch.bfloat16
-    )
-    pipe_upsample = LTXLatentUpsamplePipeline.from_pretrained(
-        "Lightricks/ltxv-spatial-upscaler-0.9.7",
-        vae=pipe.vae,
-        torch_dtype=torch.bfloat16,
-    )
-    pipe.to("cuda")
-    pipe_upsample.to("cuda")
-    pipe.vae.enable_tiling()
-
-    def round_to_nearest_resolution_acceptable_by_vae(height, width):
-        height = height - (height % pipe.vae_spatial_compression_ratio)
-        width = width - (width % pipe.vae_spatial_compression_ratio)
-        return height, width
-
-    decoded_bytes = base64.b64decode(image)
-    image_stream = BytesIO(decoded_bytes)
-    pil_image = Image.open(image_stream)
-    video = load_video(export_to_video([pil_image]))
-    condition1 = LTXVideoCondition(video=video, frame_index=0)
-
-    expected_height, expected_width = 480, 832
-    downscale_factor = 2 / 3
-    num_frames = 96
-
-    downscaled_height, downscaled_width = int(expected_height * downscale_factor), int(
-        expected_width * downscale_factor
-    )
-    downscaled_height, downscaled_width = round_to_nearest_resolution_acceptable_by_vae(
-        downscaled_height, downscaled_width
-    )
-    latents = pipe(
-        conditions=[condition1],
-        prompt=prompt,
-        negative_prompt=negative_prompt,
-        width=downscaled_width,
-        height=downscaled_height,
-        num_frames=num_frames,
-        num_inference_steps=30,
-        generator=torch.Generator().manual_seed(0),
-        output_type="latent",
-    ).frames
-
-    upscaled_height, upscaled_width = downscaled_height * 2, downscaled_width * 2
-    upscaled_latents = pipe_upsample(latents=latents, output_type="latent").frames
-
-    video = pipe(
-        conditions=[condition1],
-        prompt=prompt,
-        negative_prompt=negative_prompt,
-        width=upscaled_width,
-        height=upscaled_height,
-        num_frames=num_frames,
-        denoise_strength=0.4,
-        num_inference_steps=10,
-        latents=upscaled_latents,
-        decode_timestep=0.05,
-        image_cond_noise_scale=0.025,
-        generator=torch.Generator().manual_seed(0),
-        output_type="pil",
-    ).frames[0]
-    video = [frame.resize((expected_width, expected_height)) for frame in video]
-    return video
+    return common_ltx_pipeline(image, prompt, negative_prompt)
 
 
 def img_to_video(image: str, prompt: str, negative_prompt: str):
