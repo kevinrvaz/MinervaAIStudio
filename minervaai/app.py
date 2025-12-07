@@ -56,6 +56,8 @@ def main():
         builtin_tools_selected = gr.State(default_builtin_tool_setter())
         current_chat_session = gr.State(str(uuid4()))
         rerender_message_histories = gr.State(False)
+        voice_mode_active = gr.State(False)
+        inference_provider = gr.State("ollama")
 
         @gr.render(
             triggers=[current_chat_session.change, demo.load],
@@ -275,12 +277,26 @@ def main():
         @gr.render(triggers=[model_selected.change, demo.load], inputs=[model_selected])
         def get_agent_settings_sidebar(model_selected):
             with gr.Sidebar(position="right", open=False, width=360):
-                gr.Markdown(
-                    """
-                # Agent Settings
-                ## Model Settings
-                    """
+                gr.Markdown("# Agent Settings")
+                inference_provider_selector = gr.Dropdown(
+                    choices=["ollama", "huggingface"],
+                    label="Inference Provider",
+                    interactive=True,
+                    info="Select where the base tool calling model is hosted."
                 )
+                inference_provider_selector.select(
+                    lambda k: k,
+                    inputs=[inference_provider_selector],
+                    outputs=[inference_provider],
+                )
+                voice_mode = gr.Checkbox(
+                    label="Voice Mode", value=False, interactive=True,
+                    info="Speak with the AI assistant and also recieve audio responses from the assistant."
+                )
+                voice_mode.input(
+                    lambda k: k, inputs=[voice_mode], outputs=[voice_mode_active]
+                )
+                gr.Markdown("## Model Settings")
                 for block in build_dynamic_model_settings(model_selected):
                     block.render()
 
@@ -400,6 +416,7 @@ def main():
                         model_selected,
                         model_config_state,
                         builtin_tools_selected,
+                        inference_provider
                     ],
                     outputs=chatbot,
                 )

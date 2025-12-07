@@ -292,12 +292,12 @@ async def get_agent(
     model_parameters,
     tools_selected,
     mcp_servers,
-    inference_provider="ollama",
+    inference_provider,
 ):
-    print(model_name, model_parameters)
+    print(model_name, model_parameters, inference_provider)
     if inference_provider == "ollama":
         llm = ChatOllama(model=model_name, **model_parameters)
-    else:
+    elif inference_provider == "huggingface":
         endpoint = HuggingFaceEndpoint(
             repo_id=LLM_CONFIG[model_name]["inference_provider_name"][
                 inference_provider
@@ -322,6 +322,8 @@ async def get_agent(
                 }
             },
         )
+    else:
+        raise ValueError(f"Unsupported inference provider {inference_provider}")
 
     if mcp_servers:
         mcp_client = MultiServerMCPClient(mcp_servers)
@@ -417,11 +419,11 @@ def denormalize_history(history):
             message["metadata"] = None
 
 
-async def chat_completion(history, model_name, model_parameters, tools_selected):
+async def chat_completion(history, model_name, model_parameters, tools_selected, inference_provider):
     mcp_servers = read_mcp_config()
     print("Available mcp servers", mcp_servers)
     normalize_history(history)
-    agent = await get_agent(model_name, model_parameters, tools_selected, mcp_servers)
+    agent = await get_agent(model_name, model_parameters, tools_selected, mcp_servers, inference_provider=inference_provider)
     async for chunk in agent.astream({"messages": history}, stream_mode="updates"):
         for step, data in chunk.items():
             if step == "model":
