@@ -172,116 +172,103 @@ def main():
                     "order"
                 ],
             ):
-                if (
-                    LLM_CONFIG[model_selected]["inference_parameters"][parameter][
-                        "type"
-                    ]
-                    == "slider"
-                ):
-                    blocks.append(
-                        gr.Slider(
-                            maximum=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["max"],
-                            minimum=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["min"],
-                            value=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["default"],
-                            label=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["label"],
-                            interactive=True,
-                            render=False,
-                            info=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ].get("info", "")
+                match LLM_CONFIG[model_selected]["inference_parameters"][parameter][
+                    "type"
+                ]:
+                    case "slider":
+                        blocks.append(
+                            gr.Slider(
+                                maximum=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["max"],
+                                minimum=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["min"],
+                                value=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["default"],
+                                label=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["label"],
+                                interactive=True,
+                                render=False,
+                                info=LLM_CONFIG[model_selected]["inference_parameters"][
+                                    parameter
+                                ].get("info", ""),
+                            )
                         )
-                    )
-                    blocks[-1].change(
-                        set_parameter_field,
-                        inputs=[
-                            gr.State(parameter),
-                            blocks[-1],
-                            model_config_state,
-                        ],
-                        outputs=[model_config_state],
-                    )
-                elif (
-                    LLM_CONFIG[model_selected]["inference_parameters"][parameter][
-                        "type"
-                    ]
-                    == "dropdown"
-                ):
-                    blocks.append(
-                        gr.Dropdown(
-                            render=False,
-                            interactive=True,
-                            value=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["default"],
-                            choices=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["options"],
-                            label=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["label"],
-                            info=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ].get("info", "")
+                        blocks[-1].change(
+                            set_parameter_field,
+                            inputs=[
+                                gr.State(parameter),
+                                blocks[-1],
+                                model_config_state,
+                            ],
+                            outputs=[model_config_state],
                         )
-                    )
-                    blocks[-1].select(
-                        set_parameter_field,
-                        inputs=[
-                            gr.State(parameter),
-                            blocks[-1],
-                            model_config_state,
-                        ],
-                        outputs=[model_config_state],
-                    )
-                elif (
-                    LLM_CONFIG[model_selected]["inference_parameters"][parameter][
-                        "type"
-                    ]
-                    == "number"
-                ):
-                    blocks.append(
-                        gr.Number(
-                            maximum=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["max"],
-                            minimum=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["min"],
-                            value=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["default"],
-                            label=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ]["label"],
-                            interactive=True,
-                            render=False,
-                            info=LLM_CONFIG[model_selected]["inference_parameters"][
-                                parameter
-                            ].get("info", "")
+                    case "dropdown":
+                        blocks.append(
+                            gr.Dropdown(
+                                render=False,
+                                interactive=True,
+                                value=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["default"],
+                                choices=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["options"],
+                                label=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["label"],
+                                info=LLM_CONFIG[model_selected]["inference_parameters"][
+                                    parameter
+                                ].get("info", ""),
+                            )
                         )
-                    )
-                    blocks[-1].change(
-                        set_parameter_field,
-                        inputs=[
-                            gr.State(parameter),
-                            blocks[-1],
-                            model_config_state,
-                        ],
-                        outputs=[model_config_state],
-                    )
-                else:
-                    print(
-                        f"Unsupported parameter config {LLM_CONFIG[model_selected]["inference_parameters"][parameter]}"
-                    )
-                    break
+                        blocks[-1].select(
+                            set_parameter_field,
+                            inputs=[
+                                gr.State(parameter),
+                                blocks[-1],
+                                model_config_state,
+                            ],
+                            outputs=[model_config_state],
+                        )
+                    case "number":
+                        blocks.append(
+                            gr.Number(
+                                maximum=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["max"],
+                                minimum=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["min"],
+                                value=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["default"],
+                                label=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["label"],
+                                interactive=True,
+                                render=False,
+                                info=LLM_CONFIG[model_selected]["inference_parameters"][
+                                    parameter
+                                ].get("info", ""),
+                            )
+                        )
+                        blocks[-1].change(
+                            set_parameter_field,
+                            inputs=[
+                                gr.State(parameter),
+                                blocks[-1],
+                                model_config_state,
+                            ],
+                            outputs=[model_config_state],
+                        )
+                    case _:
+                        print(
+                            f"Unsupported parameter config {LLM_CONFIG[model_selected]["inference_parameters"][parameter]}"
+                        )
 
             return blocks
 
