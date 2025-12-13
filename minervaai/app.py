@@ -57,14 +57,43 @@ def main():
         current_chat_session = gr.State(str(uuid4()))
         rerender_message_histories = gr.State(False)
         voice_mode_active = gr.State(False)
+        system_prompt_modal_visibile = gr.State(False)
+        system_prompt = gr.State(LLM_CONFIG["gpt-oss:120b"]["system_prompt"])
         inference_provider = gr.State("ollama")
 
         @gr.render(
-            triggers=[current_chat_session.change, demo.load],
-            inputs=[current_chat_session],
+            triggers=[current_chat_session.change, demo.load, voice_mode_active.change],
+            inputs=[current_chat_session, voice_mode_active],
         )
-        def session_markdown(session_id):
+        def session_markdown(session_id, voice_mode):
             gr.Markdown(f"Current Chat Session ID: {session_id}")
+            if voice_mode:
+                gr.Markdown("Voice Mode is Active")
+
+        @gr.render(
+            triggers=[system_prompt_modal_visibile.change],
+            inputs=[system_prompt_modal_visibile, system_prompt],
+        )
+        def system_prompt_modal(visibility, sys_prompt):
+            with gr.Row(elem_id="system-prompt-modal"):
+                gr.Markdown("", elem_id="system-prompt-modal-bg", visible=visibility)
+                with gr.Group(visible=visibility):
+                    updated_prompt = gr.Textbox(
+                        value=sys_prompt, label="Edit System Prompt", interactive=True
+                    )
+                    with gr.Row():
+                        update_system_prompt = gr.Button("Update System Prompt")
+                        close_modal_btn = gr.Button("Cancel")
+
+            close_modal_btn.click(
+                lambda: False,
+                outputs=[system_prompt_modal_visibile],
+            )
+            update_system_prompt.click(
+                lambda k: (k, False),
+                inputs=[updated_prompt],
+                outputs=[system_prompt, system_prompt_modal_visibile],
+            )
 
         chatbot = gr.Chatbot(
             avatar_images=(
@@ -145,7 +174,7 @@ def main():
         @gr.on(
             triggers=[model_selected.change, demo.load],
             inputs=[model_selected],
-            outputs=[model_config_state],
+            outputs=[model_config_state, system_prompt],
         )
         def default_model_config_setter(model_selected):
             default_params = {}
@@ -160,7 +189,7 @@ def main():
                 default_params[parameter] = LLM_CONFIG[model_selected][
                     "inference_parameters"
                 ][parameter]["default"]
-            return default_params
+            return default_params, LLM_CONFIG[model_selected]["system_prompt"]
 
         def build_dynamic_model_settings(model_selected):
             blocks = [gr.Markdown(f"## {model_selected} configuration", render=False)]
@@ -278,24 +307,34 @@ def main():
         def get_agent_settings_sidebar(model_selected):
             with gr.Sidebar(position="right", open=False, width=360):
                 gr.Markdown("# Agent Settings")
+
+                edit_system_prompt = gr.Button("Edit System Prompt")
+                edit_system_prompt.click(
+                    lambda: True, outputs=system_prompt_modal_visibile
+                )
+
                 inference_provider_selector = gr.Dropdown(
                     choices=["ollama", "huggingface"],
                     label="Inference Provider",
                     interactive=True,
-                    info="Select where the base tool calling model is hosted."
+                    info="Select where the base tool calling model is hosted.",
                 )
                 inference_provider_selector.select(
                     lambda k: k,
                     inputs=[inference_provider_selector],
                     outputs=[inference_provider],
                 )
+
                 voice_mode = gr.Checkbox(
-                    label="Voice Mode", value=False, interactive=True,
-                    info="Speak with the AI assistant and also recieve audio responses from the assistant."
+                    label="Voice Mode",
+                    value=False,
+                    interactive=True,
+                    info="Speak with the AI assistant and also recieve audio responses from the assistant.",
                 )
                 voice_mode.input(
                     lambda k: k, inputs=[voice_mode], outputs=[voice_mode_active]
                 )
+
                 gr.Markdown("## Model Settings")
                 for block in build_dynamic_model_settings(model_selected):
                     block.render()
@@ -416,7 +455,8 @@ def main():
                         model_selected,
                         model_config_state,
                         builtin_tools_selected,
-                        inference_provider
+                        inference_provider,
+                        system_prompt,
                     ],
                     outputs=chatbot,
                 )
@@ -694,15 +734,41 @@ def local():
         css="""
         footer {
             visibility: hidden
-        } 
+        }
+        
         #chatbot-section {
             min-height: 65vh
-        } 
+        }
+        
         #InputField .record.record-button {
             margin-top: 15%
-        } 
+        }
+        
         #InputField .audio-container.compact-audio {
             margin-top: 5%
+        }
+        
+        #system-prompt-modal .gr-group {
+            z-index: 1002;
+            position: absolute;
+            width: 100%;
+            display: block;
+        }
+        
+        #system-prompt-modal #system-prompt-modal-bg {
+            width: 100%;
+            z-index: 1001;
+            backdrop-filter: blur(1px);
+            background-color: rgb(110 94 94 / 40%);
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
         """,
         theme=gr.themes.Soft(),

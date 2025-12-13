@@ -292,6 +292,7 @@ async def get_agent(
     model_parameters,
     tools_selected,
     mcp_servers,
+    system_prompt,
     inference_provider,
 ):
     print(model_name, model_parameters, inference_provider)
@@ -334,7 +335,7 @@ async def get_agent(
     agent = create_agent(
         llm,
         tools=filter_tools(tools_selected) + mcp_tools,
-        system_prompt=LLM_CONFIG[model_name]["system_prompt"],
+        system_prompt=system_prompt,
     )
     return agent
 
@@ -419,11 +420,11 @@ def denormalize_history(history):
             message["metadata"] = None
 
 
-async def chat_completion(history, model_name, model_parameters, tools_selected, inference_provider):
+async def chat_completion(history, model_name, model_parameters, tools_selected, inference_provider, system_prompt):
     mcp_servers = read_mcp_config()
     print("Available mcp servers", mcp_servers)
     normalize_history(history)
-    agent = await get_agent(model_name, model_parameters, tools_selected, mcp_servers, inference_provider=inference_provider)
+    agent = await get_agent(model_name, model_parameters, tools_selected, mcp_servers, system_prompt, inference_provider=inference_provider)
     async for chunk in agent.astream({"messages": history}, stream_mode="updates"):
         for step, data in chunk.items():
             if step == "model":
