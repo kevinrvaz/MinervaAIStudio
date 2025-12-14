@@ -332,35 +332,36 @@ async def get_agent(
     inference_provider,
 ):
     print(model_name, model_parameters, inference_provider)
-    if inference_provider == "ollama":
-        llm = ChatOllama(model=model_name, **model_parameters)
-    elif inference_provider == "huggingface":
-        endpoint = HuggingFaceEndpoint(
-            repo_id=LLM_CONFIG[model_name]["inference_provider_name"][
-                inference_provider
-            ],
-            task="text-generation",
-            max_new_tokens=model_parameters["num_predict"],
-            do_sample=False,
-            repetition_penalty=model_parameters["repeat_penalty"],
-            provider="groq",
-            temperature=model_parameters["temperature"],
-            seed=model_parameters["seed"],
-            top_p=model_parameters["top_p"],
-            top_k=model_parameters["top_k"],
-            streaming=True,
-        )
-        llm = ChatHuggingFace(
-            llm=endpoint,
-            model_kwargs={
-                "extra_body": {
-                    "reasoning_effort": model_parameters["reasoning"],
-                    "reasoning_format": "parsed",
-                }
-            },
-        )
-    else:
-        raise ValueError(f"Unsupported inference provider {inference_provider}")
+    match inference_provider:
+        case "ollama":
+            llm = ChatOllama(model=model_name, **model_parameters)
+        case "huggingface":
+            endpoint = HuggingFaceEndpoint(
+                repo_id=LLM_CONFIG[model_name]["inference_provider_name"][
+                    inference_provider
+                ],
+                task="text-generation",
+                max_new_tokens=model_parameters["num_predict"],
+                do_sample=False,
+                repetition_penalty=model_parameters["repeat_penalty"],
+                provider="groq",
+                temperature=model_parameters["temperature"],
+                seed=model_parameters["seed"],
+                top_p=model_parameters["top_p"],
+                top_k=model_parameters["top_k"],
+                streaming=True,
+            )
+            llm = ChatHuggingFace(
+                llm=endpoint,
+                model_kwargs={
+                    "extra_body": {
+                        "reasoning_effort": model_parameters["reasoning"],
+                        "reasoning_format": "parsed",
+                    }
+                },
+            )
+        case _:
+            raise ValueError(f"Unsupported inference provider {inference_provider}")
 
     if mcp_servers:
         mcp_client = MultiServerMCPClient(mcp_servers)
