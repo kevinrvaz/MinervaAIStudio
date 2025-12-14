@@ -285,6 +285,9 @@ def main():
                                 info=LLM_CONFIG[model_selected]["inference_parameters"][
                                     parameter
                                 ].get("info", ""),
+                                precision=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter].get("precision", None),
                             )
                         )
                         blocks[-1].change(

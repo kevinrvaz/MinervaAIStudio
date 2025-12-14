@@ -136,6 +136,42 @@ LLM_CONFIG = {
                 "order": 7,
                 "info": "Sets the random number seed to use for generation. Setting this to a specific number will make the model generate the same text for the same prompt."
             },
+            "mirostat": {
+                "default": 0,
+                "type": "dropdown",
+                "options": [0, 1, 2],
+                "order": 8,
+                "label": "Microstat",
+                "info": "Enable Mirostat sampling for controlling perplexity."
+            },
+            "mirostat_eta": {
+                "default": 0.1,
+                "type": "number",
+                "min": 0,
+                "max": 2,
+                "order": 9,
+                "label": "Mirostat Eta",
+                "info": "Influences how quickly the algorithm responds to feedback from generated text. A lower learning rate will result in slower adjustments, while a higher learning rate will make the algorithm more responsive."
+            },
+            "mirostat_tau": {
+                "default": 5.0,
+                "type": "number",
+                "min": 0,
+                "max": 10,
+                "order": 10,
+                "label": "Mirostat Tau",
+                "info": "Controls the balance between coherence and diversity of the output. A lower value will result in more focused and coherent text."
+            },
+            "repeat_last_n": {
+                "default": 64,
+                "type": "number",
+                "min": -1,
+                "max": 100000,
+                "order": 11,
+                "label": "Repeat Last N",
+                "info": "Sets how far back for the model to look back to prevent repetition.",
+                "precision": 0
+            }
         },
     },
     "gpt-oss:120b": {
