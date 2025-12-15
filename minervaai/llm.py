@@ -16,7 +16,8 @@ with BASE_IMAGE.imports():
 from minervaai.tools import *
 
 gpt_oss_system_prompt = f"""
-You are Minerva named after the roman goddess, an AI assistant.
+You are Minerva named after the roman goddess, an AI assistant. Do not mention anything about being
+an LLM or being trained or who made you or what architecture you are based on.
 Knowledge cutoff: 2024-06
 Current date: {str(datetime.now().date())}
 
@@ -79,7 +80,7 @@ LLM_CONFIG = {
                 "type": "checkbox",
                 "label": "Enable Reasoning",
                 "info": "If enabled then reasoning section values will be passed to the LLM.",
-                "order": 0
+                "order": 0,
             },
             "reasoning": {
                 "default": "medium",
@@ -87,7 +88,7 @@ LLM_CONFIG = {
                 "options": ["low", "medium", "high"],
                 "order": 0,
                 "label": "Reasoning",
-                "info": "Enables reasoning with a custom intensity level."
+                "info": "Enables reasoning with a custom intensity level.",
             },
             "num_ctx": {
                 "default": 10000,
@@ -96,7 +97,7 @@ LLM_CONFIG = {
                 "max": 128000,
                 "order": 2,
                 "label": "Context Length",
-                "info": "Sets the size of the context window used to generate the next token."
+                "info": "Sets the size of the context window used to generate the next token.",
             },
             "top_k": {
                 "default": 40,
@@ -105,7 +106,7 @@ LLM_CONFIG = {
                 "max": 100,
                 "order": 3,
                 "label": "Top K Sampling",
-                "info": "Reduces the probability of generating nonsense. A higher value (e.g. `100`) will give more diverse answers, while a lower value (e.g. `10`) will be more conservative."
+                "info": "Reduces the probability of generating nonsense. A higher value (e.g. `100`) will give more diverse answers, while a lower value (e.g. `10`) will be more conservative.",
             },
             "top_p": {
                 "default": 0.9,
@@ -114,7 +115,7 @@ LLM_CONFIG = {
                 "max": 1,
                 "order": 4,
                 "label": "Top P Sampling",
-                "info": "Works together with top-k. A higher value (e.g., `0.95`) will lead to more diverse text, while a lower value (e.g., `0.5`) will generate more focused and conservative text."
+                "info": "Works together with top-k. A higher value (e.g., `0.95`) will lead to more diverse text, while a lower value (e.g., `0.5`) will generate more focused and conservative text.",
             },
             "repeat_penalty": {
                 "default": 1.1,
@@ -123,7 +124,7 @@ LLM_CONFIG = {
                 "max": 2,
                 "order": 5,
                 "label": "Repeat Penalty",
-                "info": "Sets how strongly to penalize repetitions. A higher value (e.g., `1.5`) will penalize repetitions more strongly, while a lower value (e.g., `0.9`) will be more lenient."
+                "info": "Sets how strongly to penalize repetitions. A higher value (e.g., `1.5`) will penalize repetitions more strongly, while a lower value (e.g., `0.9`) will be more lenient.",
             },
             "num_predict": {
                 "default": 1000,
@@ -132,14 +133,14 @@ LLM_CONFIG = {
                 "max": 128000,
                 "order": 6,
                 "label": "Max Tokens",
-                "info": "Maximum number of tokens to predict when generating text."
+                "info": "Maximum number of tokens to predict when generating text.",
             },
             "enable_seed": {
                 "default": False,
                 "type": "checkbox",
                 "label": "Enable Seed",
                 "order": 7,
-                "info": "Enable seed option"
+                "info": "Enable seed option",
             },
             "seed": {
                 "default": 42,
@@ -148,7 +149,7 @@ LLM_CONFIG = {
                 "max": None,
                 "label": "Seed",
                 "order": 7,
-                "info": "Sets the random number seed to use for generation. Setting this to a specific number will make the model generate the same text for the same prompt."
+                "info": "Sets the random number seed to use for generation. Setting this to a specific number will make the model generate the same text for the same prompt.",
             },
             "mirostat": {
                 "default": 0,
@@ -156,7 +157,7 @@ LLM_CONFIG = {
                 "options": [0, 1, 2],
                 "order": 8,
                 "label": "Microstat",
-                "info": "Enable Mirostat sampling for controlling perplexity."
+                "info": "Enable Mirostat sampling for controlling perplexity.",
             },
             "mirostat_eta": {
                 "default": 0.1,
@@ -165,7 +166,7 @@ LLM_CONFIG = {
                 "max": 2,
                 "order": 9,
                 "label": "Mirostat Eta",
-                "info": "Influences how quickly the algorithm responds to feedback from generated text. A lower learning rate will result in slower adjustments, while a higher learning rate will make the algorithm more responsive."
+                "info": "Influences how quickly the algorithm responds to feedback from generated text. A lower learning rate will result in slower adjustments, while a higher learning rate will make the algorithm more responsive.",
             },
             "mirostat_tau": {
                 "default": 5.0,
@@ -174,7 +175,7 @@ LLM_CONFIG = {
                 "max": 10,
                 "order": 10,
                 "label": "Mirostat Tau",
-                "info": "Controls the balance between coherence and diversity of the output. A lower value will result in more focused and coherent text."
+                "info": "Controls the balance between coherence and diversity of the output. A lower value will result in more focused and coherent text.",
             },
             "repeat_last_n": {
                 "default": 64,
@@ -184,8 +185,8 @@ LLM_CONFIG = {
                 "order": 11,
                 "label": "Repeat Last N",
                 "info": "Sets how far back for the model to look back to prevent repetition.",
-                "precision": 0
-            }
+                "precision": 0,
+            },
         },
     },
     "gpt-oss:120b": {
@@ -211,7 +212,7 @@ LLM_CONFIG = {
                 "options": ["low", "medium", "high"],
                 "order": 0,
                 "label": "Reasoning",
-                "info": "Enables reasoning with a custom intensity level."
+                "info": "Enables reasoning with a custom intensity level.",
             },
             "num_ctx": {
                 "default": 10000,
@@ -220,7 +221,7 @@ LLM_CONFIG = {
                 "max": 128000,
                 "order": 2,
                 "label": "Context Length",
-                "info": "Sets the size of the context window used to generate the next token."
+                "info": "Sets the size of the context window used to generate the next token.",
             },
             "top_k": {
                 "default": 40,
@@ -229,7 +230,7 @@ LLM_CONFIG = {
                 "max": 100,
                 "order": 3,
                 "label": "Top K Sampling",
-                "info": "Reduces the probability of generating nonsense. A higher value (e.g. `100`) will give more diverse answers, while a lower value (e.g. `10`) will be more conservative."
+                "info": "Reduces the probability of generating nonsense. A higher value (e.g. `100`) will give more diverse answers, while a lower value (e.g. `10`) will be more conservative.",
             },
             "top_p": {
                 "default": 0.9,
@@ -238,7 +239,7 @@ LLM_CONFIG = {
                 "max": 1,
                 "order": 4,
                 "label": "Top P Sampling",
-                "info": "Works together with top-k. A higher value (e.g., `0.95`) will lead to more diverse text, while a lower value (e.g., `0.5`) will generate more focused and conservative text."
+                "info": "Works together with top-k. A higher value (e.g., `0.95`) will lead to more diverse text, while a lower value (e.g., `0.5`) will generate more focused and conservative text.",
             },
             "repeat_penalty": {
                 "default": 1.1,
@@ -247,7 +248,7 @@ LLM_CONFIG = {
                 "max": 2,
                 "order": 5,
                 "label": "Repeat Penalty",
-                "info": "Sets how strongly to penalize repetitions. A higher value (e.g., `1.5`) will penalize repetitions more strongly, while a lower value (e.g., `0.9`) will be more lenient."
+                "info": "Sets how strongly to penalize repetitions. A higher value (e.g., `1.5`) will penalize repetitions more strongly, while a lower value (e.g., `0.9`) will be more lenient.",
             },
             "num_predict": {
                 "default": 1000,
@@ -256,7 +257,7 @@ LLM_CONFIG = {
                 "max": 128000,
                 "order": 6,
                 "label": "Max Tokens",
-                "info": "Maximum number of tokens to predict when generating text."
+                "info": "Maximum number of tokens to predict when generating text.",
             },
             "seed": {
                 "default": None,
@@ -265,7 +266,7 @@ LLM_CONFIG = {
                 "max": None,
                 "label": "Seed",
                 "order": 7,
-                "info": "Sets the random number seed to use for generation. Setting this to a specific number will make the model generate the same text for the same prompt."
+                "info": "Sets the random number seed to use for generation. Setting this to a specific number will make the model generate the same text for the same prompt.",
             },
         },
     },
@@ -349,12 +350,12 @@ async def get_agent(
         if not model_parameters["enable_reasoning"]:
             del model_parameters["reasoning"]
         del model_parameters["enable_reasoning"]
-    
+
     if "enable_seed" in model_parameters:
         if not model_parameters["enable_seed"]:
             model_parameters["seed"] = None
         del model_parameters["enable_seed"]
-    
+
     print(model_name, model_parameters, inference_provider)
     match inference_provider:
         case "ollama":
@@ -481,11 +482,25 @@ def denormalize_history(history):
             message["metadata"] = None
 
 
-async def chat_completion(history, model_name, model_parameters, tools_selected, inference_provider, system_prompt):
+async def chat_completion(
+    history,
+    model_name,
+    model_parameters,
+    tools_selected,
+    inference_provider,
+    system_prompt,
+):
     mcp_servers = read_mcp_config()
     print("Available mcp servers", mcp_servers)
     normalize_history(history)
-    agent = await get_agent(model_name, model_parameters, tools_selected, mcp_servers, system_prompt, inference_provider=inference_provider)
+    agent = await get_agent(
+        model_name,
+        model_parameters,
+        tools_selected,
+        mcp_servers,
+        system_prompt,
+        inference_provider=inference_provider,
+    )
     async for chunk in agent.astream({"messages": history}, stream_mode="updates"):
         for step, data in chunk.items():
             if step == "model":
