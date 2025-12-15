@@ -151,12 +151,12 @@ def read_mcp_config():
 
 
 def read_remote_file(file_name, file_ext):
-    file_name = create_random_file_name(file_ext)
+    new_file_name = create_random_file_name(file_ext)
     data = b""
     for chunk in outputs.read_file(file_name):
         data += chunk
 
-    with open(file_name, "wb") as file:
+    with open(new_file_name, "wb") as file:
         file.write(data)
 
-    return file_name
+    return new_file_name

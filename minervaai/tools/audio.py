@@ -130,7 +130,9 @@ def music_generation_tool(prompt: str) -> str:
 @tool
 def speech_to_text_tool(file_path: str) -> str:
     """Convert the audio recording file provided into text and return it.
-    you can also use it for understanding audio files.
+    you can also use it for understanding audio files. If user only provides an audio
+    file and no instruction assume the instruction is part of the audio file and you need to
+    use this to get a transcript of the audio file to understand what to do next.
 
     Args:
         file_path (str): The location of the audio file to be converted to text.
