@@ -299,6 +299,31 @@ def main():
                             ],
                             outputs=[model_config_state],
                         )
+                    case "checkbox":
+                        blocks.append(
+                            gr.Checkbox(
+                                value=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["default"],
+                                label=LLM_CONFIG[model_selected][
+                                    "inference_parameters"
+                                ][parameter]["label"],
+                                interactive=True,
+                                render=False,
+                                info=LLM_CONFIG[model_selected]["inference_parameters"][
+                                    parameter
+                                ].get("info", "")
+                            )
+                        )
+                        blocks[-1].change(
+                            set_parameter_field,
+                            inputs=[
+                                gr.State(parameter),
+                                blocks[-1],
+                                model_config_state,
+                            ],
+                            outputs=[model_config_state],
+                        )
                     case _:
                         print(
                             f"Unsupported parameter config {LLM_CONFIG[model_selected]["inference_parameters"][parameter]}"

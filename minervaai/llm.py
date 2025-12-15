@@ -74,6 +74,13 @@ LLM_CONFIG = {
                 "label": "Temperature",
                 "info": "The temperature of the model. Increasing the temperature will make the model answer more creatively.",
             },
+            "enable_reasoning": {
+                "default": True,
+                "type": "checkbox",
+                "label": "Enable Reasoning",
+                "info": "If enabled then reasoning section values will be passed to the LLM.",
+                "order": 0
+            },
             "reasoning": {
                 "default": "medium",
                 "type": "dropdown",
@@ -127,8 +134,15 @@ LLM_CONFIG = {
                 "label": "Max Tokens",
                 "info": "Maximum number of tokens to predict when generating text."
             },
+            "enable_seed": {
+                "default": False,
+                "type": "checkbox",
+                "label": "Enable Seed",
+                "order": 7,
+                "info": "Enable seed option"
+            },
             "seed": {
-                "default": None,
+                "default": 42,
                 "type": "number",
                 "min": None,
                 "max": None,
@@ -331,6 +345,16 @@ async def get_agent(
     system_prompt,
     inference_provider,
 ):
+    if "enable_reasoning" in model_parameters:
+        if not model_parameters["enable_reasoning"]:
+            del model_parameters["reasoning"]
+        del model_parameters["enable_reasoning"]
+    
+    if "enable_seed" in model_parameters:
+        if not model_parameters["enable_seed"]:
+            model_parameters["seed"] = None
+        del model_parameters["enable_seed"]
+    
     print(model_name, model_parameters, inference_provider)
     match inference_provider:
         case "ollama":
