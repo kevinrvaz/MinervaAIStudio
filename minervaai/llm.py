@@ -371,19 +371,26 @@ async def get_agent(
                 repetition_penalty=model_parameters["repeat_penalty"],
                 provider="groq",
                 temperature=model_parameters["temperature"],
-                seed=model_parameters["seed"],
+                seed=(
+                    model_parameters["seed"]
+                    if model_parameters.get("enable_seed", False)
+                    else None
+                ),
                 top_p=model_parameters["top_p"],
                 top_k=model_parameters["top_k"],
                 streaming=True,
             )
-            llm = ChatHuggingFace(
-                llm=endpoint,
-                model_kwargs={
+            model_kwargs = {}
+            if model_parameters.get("enable_reasoning", True):
+                model_kwargs = {
                     "extra_body": {
                         "reasoning_effort": model_parameters["reasoning"],
                         "reasoning_format": "parsed",
                     }
-                },
+                }
+            llm = ChatHuggingFace(
+                llm=endpoint,
+                model_kwargs=model_kwargs,
             )
         case _:
             raise ValueError(f"Unsupported inference provider {inference_provider}")
